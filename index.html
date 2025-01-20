@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>LINE風チャット</title>
+  <!-- CSSファイルを読み込む -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="talkList"></div>
+  <div id="chatArea">
+    <div id="messageContainer">データ取得中...</div>
+
+    <!-- ユーザーが自由入力する時に表示する領域 -->
+    <div id="inputArea">
+      <input id="userInput" type="text" placeholder="入力してください" />
+      <button id="sendBtn">送信</button>
+    </div>
+
+    <!-- ユーザーが選択肢を選ぶ時に表示する領域 -->
+    <div id="choicesArea"></div>
+  </div>
+
+  <!-- JSファイルを読み込む -->
+  <script src="script.js"></script>
+</body>
+</html>
