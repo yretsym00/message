@@ -1,27 +1,37 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>LINE風チャット</title>
-  <!-- CSSファイルを読み込む -->
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>Talk App Sample</title>
+  <!-- 別ファイルのCSSを読み込み -->
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <div id="talkList"></div>
-  <div id="chatArea">
-    <div id="messageContainer">データ取得中...</div>
-
-    <!-- ユーザーが自由入力する時に表示する領域 -->
-    <div id="inputArea">
-      <input id="userInput" type="text" placeholder="入力してください" />
-      <button id="sendBtn">送信</button>
+  <div style="display: flex; width: 100%; height: 100vh; margin:0; padding:0; box-sizing:border-box;">
+    <!-- サイドバー -->
+    <div id="talkList">
+      <!-- ここにスピーカーのリスト (.talk-item) が追加されます -->
     </div>
 
-    <!-- ユーザーが選択肢を選ぶ時に表示する領域 -->
-    <div id="choicesArea"></div>
+    <!-- メインエリア -->
+    <div id="chatArea">
+      <!-- メッセージ表示領域 -->
+      <div id="messageContainer">
+        <!-- メッセージの吹き出しがここに描画される -->
+      </div>
+      <!-- 選択肢ボタン表示領域 -->
+      <div id="choicesArea">
+        <!-- 選択肢ボタンがここに追加される -->
+      </div>
+      <!-- 自由入力エリア -->
+      <div id="inputArea">
+        <input id="userInput" type="text" />
+        <button id="sendBtn">送信</button>
+      </div>
+    </div>
   </div>
 
-  <!-- JSファイルを読み込む -->
-  <script src="script.js"></script>
+  <!-- 質問文で示されている script.js と同じものを読み込み -->
+  <script src="./script.js"></script>
 </body>
 </html>
