@@ -1,28 +1,16 @@
 /* =========================================
    1) グローバル変数・定義
 ========================================= */
-
-// CSVの公開URL（必要なら書き換えてください）
 const SPREADSHEET_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQOpH43k0f6Cc0Qn1gzXsnJNDybSce7CTW1hOWBgvTJIfTPuaZsEpcbO1u9E7CIQSSGzAHa4ZST7fFw/pub?output=csv";プレビュー
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQOpH43k0f6Cc0Qn1gzXsnJNDybSce7CTW1hOWBgvTJIfTPuaZsEpcbO1u9E7CIQSSGzAHa4ZST7fFw/pub?output=csv";
 
-// 全会話データ (id順で並べる)
 let conversations = [];
-
-// 現在選択中の speaker_id
 let currentSpeakerId = null;
-
-// 各スピーカーの会話履歴
 let speakerConversations = {};
-
-// サイドバーに表示中の speaker_id
 let displayedSpeakerIds = [];
-
-// タイピング演出用
 let typingIndicatorDiv = null;
 let typingIndicatorInterval = null;
 
-// DOM要素
 const talkList = document.getElementById("talkList");
 const messageContainer = document.getElementById("messageContainer");
 const inputArea = document.getElementById("inputArea");
@@ -30,7 +18,6 @@ const userInput = document.getElementById("userInput");
 const sendBtn = document.getElementById("sendBtn");
 const choicesArea = document.getElementById("choicesArea");
 
-// 会話の二重実行を防ぐフラグ
 let isConversationRunning = false;
 
 /* =========================================
@@ -44,23 +31,15 @@ window.addEventListener("load", async () => {
     const csvText = await response.text();
     const rows = csvText.split("\n").map((r) => r.split(","));
 
-    console.log("[DEBUG] rows.length =", rows.length);
-
-    // 1行目はヘッダー想定
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      console.log(`[DEBUG] Row #${i}`, row, " length=", row.length);
-
-      // 28列以上あるかチェック
       if (row.length < 28) {
-        console.log("[DEBUG] row.length < 28 → スキップ:", row);
         continue;
       }
 
       const id = parseInt(row[0], 10);
       if (!id) continue;
 
-      // A=0, B=1, ...
       const speakerName      = (row[1]  || "").trim();
       const message          = (row[2]  || "").trim();
       const input            = (row[3]  || "").trim();
@@ -79,13 +58,11 @@ window.addEventListener("load", async () => {
       const waittime_seconds = (row[16] || "").trim();
       const readstatus       = (row[17] || "").trim();
 
-      // S/T列 (image, imageURL)
-      const imageRaw = (row[18] || "");
-      const imageURLRaw = (row[19] || "");
+      const imageRaw   = (row[18] || "");
+      const imageURLRaw = (row[19]  || "");
       const image    = imageRaw.replace(/\r/g, "").trim();
       const imageURL = imageURLRaw.replace(/\r/g, "").trim();
 
-      // U列～AB列
       const choice1URL  = (row[20] || "").trim();
       const Tweettext1  = (row[21] || "").trim();
       const choice2URL  = (row[22] || "").trim();
@@ -130,7 +107,6 @@ window.addEventListener("load", async () => {
     // ID昇順
     conversations.sort((a, b) => a.id - b.id);
 
-    // "最初のスピーカー1人" をサイドバーに追加
     for (const c of conversations) {
       if (c.speakerId && c.speakerId !== "USER") {
         const isUnread = (c.readstatus === "unread");
@@ -143,8 +119,7 @@ window.addEventListener("load", async () => {
 
   } catch (err) {
     console.error(err);
-    messageContainer.textContent =
-      "データ取得失敗。URLや公開設定などを確認してください。";
+    messageContainer.textContent = "データ取得失敗。URLや公開設定などを確認してください。";
   }
 });
 
@@ -207,21 +182,17 @@ function addSpeakerToList(speakerId, speakerName, unread = false) {
    4) 会話開始
 ========================================= */
 async function startConversation(speakerId) {
-  // すでに同じスピーカーで会話実行中なら何もしない
   if (currentSpeakerId === speakerId && isConversationRunning) {
     return;
   }
 
-  // 会話フロー開始
   isConversationRunning = true;
   currentSpeakerId = speakerId;
 
-  // SPの時はサイドバーロック(任意)
   if (isSPid(speakerId)) {
     disableAllSpeakers();
   }
 
-  // 画面クリア
   messageContainer.innerHTML = "";
   inputArea.style.display = "none";
   choicesArea.style.display = "none";
@@ -239,14 +210,12 @@ async function startConversation(speakerId) {
   restoreConversationHistory(speakerId);
 
   if (!speakerConversations[speakerId].currentId) {
-    // 会話フロー終了
     isConversationRunning = false;
     return;
   }
 
   await displayFromId(speakerConversations[speakerId].currentId);
 
-  // 会話フロー終了
   isConversationRunning = false;
 }
 
@@ -266,9 +235,13 @@ function restoreConversationHistory(speakerId) {
     // スピーカー(左)ならアイコン
     if (msg.speakerName !== "あなた") {
       const iconDiv = document.createElement("div");
-      iconDiv.className = "icon speaker-icon";
+      iconDiv.className = getSpeakerIconClassName(speakerId);
       rowDiv.appendChild(iconDiv);
     }
+
+    // bubble-wrapper
+    const wrapperDiv = document.createElement("div");
+    wrapperDiv.className = "bubble-wrapper";
 
     // 吹き出し
     const bubbleDiv = document.createElement("div");
@@ -279,8 +252,22 @@ function restoreConversationHistory(speakerId) {
     } else {
       bubbleDiv.innerHTML = msg.text.replace(/\n/g, "<br>");
     }
+    wrapperDiv.appendChild(bubbleDiv);
 
-    rowDiv.appendChild(bubbleDiv);
+    // メタ情報 (実際の時刻を表示: msg.timestamp)
+    // ユーザーなら既読＋時刻、スピーカーなら時刻のみ
+    const metaDiv = document.createElement("div");
+    metaDiv.classList.add("metadata");
+    if (msg.speakerName === "あなた") {
+      metaDiv.classList.add("metadata-user");
+      metaDiv.innerHTML = `<div>既読</div><div>${msg.timestamp||"--:--"}</div>`;
+    } else {
+      metaDiv.classList.add("metadata-speaker");
+      metaDiv.innerHTML = `<div>${msg.timestamp||"--:--"}</div>`;
+    }
+    wrapperDiv.appendChild(metaDiv);
+
+    rowDiv.appendChild(wrapperDiv);
     messageContainer.appendChild(rowDiv);
   }
   messageContainer.scrollTop = messageContainer.scrollHeight;
@@ -298,7 +285,6 @@ async function displayFromId(startId) {
 
   while (true) {
     if (!currentRow) break;
-    // 途中でスピーカーが変わったら停止
     if (currentSpeakerId !== initialSpeakerId) break;
 
     const waitSec = parseInt(currentRow.waittime_seconds || "0", 10);
@@ -312,11 +298,9 @@ async function displayFromId(startId) {
     const rowSpeakerName = currentRow.speakerName;
     const nextRow = conversations.find(c => c.id === currentRow.id + 1);
 
-    console.log("[DEBUG] displayFromId - currentRow:", currentRow);
-
     // A) 同じスピーカー & != USER
     if (rowSpeakerId === initialSpeakerId && rowSpeakerId !== "USER") {
-      showTypingIndicator(false); // スピーカー(左)
+      showTypingIndicator(false);
       await sleep(getTypingWaitTime());
       hideTypingIndicator();
 
@@ -333,14 +317,13 @@ async function displayFromId(startId) {
       if (!nextRow) break;
       currentRow = nextRow;
       continue;
-    }
 
     // B) USER
-    else if (!rowSpeakerId || rowSpeakerId === "USER") {
+    } else if (!rowSpeakerId || rowSpeakerId === "USER") {
       speakerConversations[initialSpeakerId].currentId = currentRow.id;
 
       if (currentRow.message.trim() !== "") {
-        showTypingIndicator(true); // ユーザー(右)
+        showTypingIndicator(true);
         await sleep(getTypingWaitTime());
         hideTypingIndicator();
 
@@ -364,10 +347,9 @@ async function displayFromId(startId) {
         await handleUserTurn(currentRow);
       }
       break;
-    }
 
-    // C) 別のスピーカー
-    else {
+    } else {
+      // 別スピーカー
       if (isSPid(initialSpeakerId) && isSPid(rowSpeakerId) && initialSpeakerId !== rowSpeakerId) {
         enableAllSpeakers();
       }
@@ -403,7 +385,6 @@ async function handleUserTurn(row) {
     NGid,
     choice1, choice2, choice3, choice4,
     nextId1, nextId2, nextId3, nextId4,
-
     choice1URL,
     Tweettext1,
     choice2URL,
@@ -414,12 +395,11 @@ async function handleUserTurn(row) {
     Tweettext4
   } = row;
 
-  // 表示リセット
   inputArea.style.display = "none";
   choicesArea.style.display = "none";
   userInput.value = "";
 
-  // (A) 選択肢がある
+  // A) 選択肢
   if (choice1 || choice2 || choice3 || choice4) {
     choicesArea.innerHTML = "";
     choicesArea.style.display = "block";
@@ -447,7 +427,7 @@ async function handleUserTurn(row) {
           if (btn.disabled) return;
           btn.disabled = true;
 
-          showTypingIndicator(true); // ユーザー(右)
+          showTypingIndicator(true);
           await sleep(getTypingWaitTime());
           hideTypingIndicator();
 
@@ -473,13 +453,11 @@ async function handleUserTurn(row) {
       });
     });
 
-  }
-  // (B) 自由入力
-  else if (input === "自由入力") {
+  // B) 自由入力
+  } else if (input === "自由入力") {
     inputArea.style.display = "flex";
 
     const originalOnclick = sendBtn.onclick;
-
     sendBtn.onclick = async () => {
       if (sendBtn.disabled) return;
       sendBtn.disabled = true;
@@ -490,7 +468,7 @@ async function handleUserTurn(row) {
         return;
       }
 
-      showTypingIndicator(true); // ユーザー(右)
+      showTypingIndicator(true);
       await sleep(getTypingWaitTime());
       hideTypingIndicator();
 
@@ -501,7 +479,7 @@ async function handleUserTurn(row) {
 
       await sleep(500);
 
-      showTypingIndicator(false); // スピーカー(左)
+      showTypingIndicator(false);
       await sleep(getTypingWaitTime());
       hideTypingIndicator();
 
@@ -527,6 +505,7 @@ async function handleUserTurn(row) {
 
 /* =========================================
    8) メッセージ表示 & 履歴追加
+   - ここで実際の時刻を保存してバブルに表示
 ========================================= */
 function addMessageToChat(speakerId, speakerName, text, image = "", imageURL = "") {
   if (!speakerConversations[currentSpeakerId]) {
@@ -537,61 +516,82 @@ function addMessageToChat(speakerId, speakerName, text, image = "", imageURL = "
     };
   }
 
+  // 実際の時刻を取得
+  const nowString = getCurrentTimeString();
+
+  // 履歴に追加 (timestamp も保存)
   speakerConversations[currentSpeakerId].messages.push({
     speakerName,
     text,
     image,
-    imageURL
+    imageURL,
+    timestamp: nowString
   });
 
+  // 1行分
   const rowDiv = document.createElement("div");
   rowDiv.className =
     "message-row " + (speakerName === "あなた" ? "message-right" : "message-left");
 
-  // スピーカーのみアイコン
+  // スピーカーならアイコン
   if (speakerName !== "あなた") {
     const iconDiv = document.createElement("div");
-    iconDiv.className = "icon speaker-icon";
+    iconDiv.className = getSpeakerIconClassName(speakerId);
     rowDiv.appendChild(iconDiv);
   }
+
+  // bubble-wrapper
+  const wrapperDiv = document.createElement("div");
+  wrapperDiv.className = "bubble-wrapper";
 
   // 吹き出し
   const bubbleDiv = document.createElement("div");
   bubbleDiv.className = "message-bubble";
 
   if (image === "ON") {
-    bubbleDiv.innerHTML = `<img src="${imageURL}" style="max-width: 100%; height:auto;">`;
+    bubbleDiv.innerHTML = `<img src="${imageURL}" style="max-width: 100%; height: auto;">`;
   } else {
     bubbleDiv.innerHTML = text.replace(/\n/g, "<br>");
   }
+  wrapperDiv.appendChild(bubbleDiv);
 
-  rowDiv.appendChild(bubbleDiv);
+  // メタ情報
+  const metaDiv = document.createElement("div");
+  metaDiv.classList.add("metadata");
+  if (speakerName === "あなた") {
+    // ユーザー(右) → 既読 + 実時刻
+    metaDiv.classList.add("metadata-user");
+    metaDiv.innerHTML = `<div>既読</div><div>${nowString}</div>`;
+  } else {
+    // スピーカー(左) → 時刻のみ
+    metaDiv.classList.add("metadata-speaker");
+    metaDiv.innerHTML = `<div>${nowString}</div>`;
+  }
+  wrapperDiv.appendChild(metaDiv);
+
+  rowDiv.appendChild(wrapperDiv);
   messageContainer.appendChild(rowDiv);
   messageContainer.scrollTop = messageContainer.scrollHeight;
 }
 
 /* =========================================
    9) タイピング演出 (...アニメ)
-   - ここに「スピーカーならアイコンを表示」ロジックを追加
 ========================================= */
 function showTypingIndicator(isUserSide = false) {
   hideTypingIndicator();
 
-  // 親要素
   typingIndicatorDiv = document.createElement("div");
   typingIndicatorDiv.className = isUserSide
     ? "message-row message-right typing-indicator"
     : "message-row message-left typing-indicator";
 
-  // ★ スピーカー(左)ならアイコンを表示
+  // 左ならアイコン
   if (!isUserSide) {
-    // スピーカーアイコン
     const iconDiv = document.createElement("div");
-    iconDiv.className = "icon speaker-icon";
+    iconDiv.className = getSpeakerIconClassName(currentSpeakerId);
     typingIndicatorDiv.appendChild(iconDiv);
   }
 
-  // 吹き出し(…)
   const bubble = document.createElement("div");
   bubble.className = "message-bubble";
   bubble.innerHTML = ".";
@@ -631,7 +631,25 @@ function hideTypingIndicator() {
 }
 
 /* =========================================
-   10) 補助関数
+   10) アイコン切り替え関数
+========================================= */
+function getSpeakerIconClassName(spId) {
+  if (!spId || spId === "USER") {
+    return "";
+  }
+
+  const idUpper = spId.toUpperCase();
+  if (idUpper === "SP001") {
+    return "icon sp001-icon";
+  } else if (idUpper === "SP002") {
+    return "icon sp002-icon";
+  } else {
+    return "icon speaker-icon";
+  }
+}
+
+/* =========================================
+   補助関数
 ========================================= */
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -651,9 +669,14 @@ function getTypingWaitTime() {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-/* =========================================
-   サイドバー ロック/アンロック(任意)
-========================================= */
+// 実際の時刻(HH:MM)取得
+function getCurrentTimeString() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
 function disableAllSpeakers() {
   talkList.style.pointerEvents = "none";
   talkList.style.opacity = "0.6";
@@ -663,9 +686,6 @@ function enableAllSpeakers() {
   talkList.style.opacity = "";
 }
 
-/* =========================================
-   "SP"で始まるIDか判定(任意)
-========================================= */
 function isSPid(spId) {
   if (!spId) return false;
   return spId.toUpperCase().startsWith("SP");

@@ -1,28 +1,26 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Talk App Sample</title>
-  <!-- 別ファイルのCSSを読み込み -->
+  <!-- CSS -->
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <div style="display: flex; width: 100%; height: 100vh; margin:0; padding:0; box-sizing:border-box;">
     <!-- サイドバー -->
     <div id="talkList">
-      <!-- ここにスピーカーのリスト (.talk-item) が追加されます -->
+      <!-- ここにスピーカー一覧(.talk-item)が追加されます -->
     </div>
 
     <!-- メインエリア -->
     <div id="chatArea">
       <!-- メッセージ表示領域 -->
       <div id="messageContainer">
-        <!-- メッセージの吹き出しがここに描画される -->
+        <!-- メッセージ吹き出しがここに描画される -->
       </div>
       <!-- 選択肢ボタン表示領域 -->
-      <div id="choicesArea">
-        <!-- 選択肢ボタンがここに追加される -->
-      </div>
+      <div id="choicesArea"></div>
       <!-- 自由入力エリア -->
       <div id="inputArea">
         <input id="userInput" type="text" />
@@ -31,7 +29,7 @@
     </div>
   </div>
 
-  <!-- 質問文で示されている script.js と同じものを読み込み -->
+  <!-- JS -->
   <script src="./script.js"></script>
 </body>
 </html>
