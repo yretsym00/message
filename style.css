@@ -1,4 +1,6 @@
-/* 全体レイアウト */
+/* ===============================
+   全体リセット・基本設定
+=============================== */
 html, body {
   margin: 0;
   padding: 0;
@@ -7,17 +9,64 @@ html, body {
   font-family: "Helvetica", "Arial", sans-serif;
 }
 
-body {
+/* ===============================
+   ヘッダー
+=============================== */
+#topBar {
+  background: #fff;
+  border-bottom: 1px solid #ccc;
+  height: 48px;                /* お好みで高さ調整 */
+  display: flex;
+  align-items: center;
+}
+
+/* ハンバーガーボタン */
+.sidebar-toggle {
+  margin-left: 10px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  position: relative; /* 未読インジケータ配置のため */
+}
+
+/* サイドバー用の未読インジケータ（赤丸） */
+.sidebar-toggle .sidebar-unread {
+  position: absolute;
+  top: -5px;    /* ここで丸の位置を微調整 (上に) */
+  right: -5px;  /* ここで丸の位置を微調整 (右に) */
+  width: 10px;
+  height: 10px;
+  background-color: red;
+  border-radius: 50%;
+  pointer-events: none; /* クリックを邪魔しない */
+}
+
+/* ===============================
+   メインコンテナ: サイドバー + チャット
+=============================== */
+#container {
+  display: flex;                       /* 横並び */
+  height: calc(100vh - 48px);          /* ヘッダーを除いた残り高さ */
   background-color: #8AAECB;
 }
 
+/* サイドバー(スピーカー一覧) */
 #talkList {
-  width: 200px;
-  border-right: 1px solid #ccc;
-  overflow-y: auto;
+  width: 0;                            /* 初期は幅0 */
+  overflow: hidden;
   background-color: #fff;
+  border-right: 1px solid #ccc;
+  transition: width 0.3s ease;         /* 幅のアニメーション */
 }
 
+/* .open が付いたら幅150pxに (お好みで調整) */
+#talkList.open {
+  width: 150px;
+}
+
+/* スピーカー一覧アイテム */
 .talk-item {
   padding: 10px;
   border-bottom: 1px solid #eee;
@@ -31,6 +80,7 @@ body {
 .talk-item-name {
   font-size: 14px;
   font-weight: bold;
+  color: #333;
 }
 .unread-icon {
   width: 10px;
@@ -46,33 +96,39 @@ body {
   opacity: 0.5;
 }
 
-/* チャットエリア */
+/* ===============================
+   チャットエリア
+=============================== */
 #chatArea {
-  flex: 1;
+  flex: 1;                           /* サイドバー以外をすべて使う */
   display: flex;
-  flex-direction: column;
+  flex-direction: column;            /* 縦方向に並べる */
+  box-sizing: border-box;
 }
+
+/* メッセージ表示領域 */
 #messageContainer {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-  background-color: #8AAECB; 
+  background-color: #8AAECB;
+  box-sizing: border-box;
 }
 
-/* メッセージ行 */
+/* メッセージ行 (左/右) */
 .message-row {
   display: flex;
   align-items: flex-end;
-  margin: 8px 0;
+  margin: 9px 0;
 }
 .message-left {
-  justify-content: flex-start; /* 左寄せ */
+  justify-content: flex-start;
 }
 .message-right {
-  justify-content: flex-end;   /* 右寄せ */
+  justify-content: flex-end;
 }
 
-/* アイコン (sp001, sp002, ほか) */
+/* アイコン (sp001, sp002, etc.) */
 .icon {
   width: 36px;
   height: 36px;
@@ -97,27 +153,26 @@ body {
 .message-bubble {
   border-radius: 12px;
   padding: 8px 12px;
-  max-width: 90%;
-  line-height: 1.4;
+  max-width: 80%;
+  line-height: 1.5;
   font-size: 14px;
   word-wrap: break-word;
   white-space: pre-wrap;
   color: #111;
-  background-color: #fff; 
+  background-color: #fff;
   margin: 0 8px;
 }
 .message-right .message-bubble {
-  background-color: #9EEA9C; /* 右:淡い緑 */
+  background-color: #9EEA9C; /* 右(ユーザー)側の吹き出し色 */
 }
 
-/* ====== メタ情報を外側に配置 ====== */
-/* ラッパ */
+/* バブルラッパ */
 .bubble-wrapper {
-  position: relative; 
-  display: inline-block; 
+  position: relative;
+  display: inline-block;
 }
 
-/* メタ情報 */
+/* メタ情報 (時刻など) */
 .metadata {
   position: absolute;
   bottom: 0;
@@ -128,52 +183,99 @@ body {
   flex-direction: column;
   white-space: nowrap;
 }
-
-/* スピーカー(左) → 右外側に時刻のみ */
 .metadata-speaker {
   left: 100%;
-  margin-left: 3px; /* 吹き出しとの隙間 */
+  margin-left: 3px;
 }
-
-/* ユーザー(右) → 左外側に「既読」「時刻」 */
 .metadata-user {
   right: 100%;
   margin-right: 6px;
-  align-items: flex-end; 
+  align-items: flex-end;
 }
 
-/* 入力・選択肢などは従来のまま */
+/* ===============================
+   選択肢エリア / 入力エリア
+=============================== */
 #choicesArea {
   display: none;
   padding: 10px;
-  background: #fff;
-  border-top: 1px solid #ccc;
+  background: #8AAECB;       /* 選択肢周りの背景色 */
+  border-top: 1px solid #8AAECB;
+  box-sizing: border-box;
 }
 #choicesArea button {
-  margin: 4px;
-  border: 1px solid #ccc;
-  background: #fff;
-  padding: 6px 12px;
+  display: block;
+  width: 100%;
+  margin-bottom: 8px;          /* ボタン間の余白 */
+  font-size: 14px;
+  padding: 7px 16px;           /* 内側の余白 */
   cursor: pointer;
-  border-radius: 5px;
+
+  /* ▼ 枠線 & 角丸 & 色など */
+  border: 1px solid #ccc;     
+  border-radius: 12px;        
+  background-color: #fff;     
+  color: #333;                
+  box-shadow: none;           
+  transition: background 0.2s, box-shadow 0.2s;
 }
 #choicesArea button:hover {
-  background: #eee;
+  background-color: #f0f0f0;  
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
 }
 
+/* 下部の吹き出し型入力エリア */
 #inputArea {
-  display: none;
-  padding: 10px;
+  display: block;               
   background: #fff;
   border-top: 1px solid #ccc;
-}
-#inputArea input {
-  width: 80%;
-  padding: 8px;
-  margin-right: 5px;
+  box-sizing: border-box;
+  padding: 10px;
 }
 
-/* タイピング中演出 */
+/* 吹き出し風の枠を作る */
+.input-container {
+  display: flex;
+  align-items: center;
+  background-color: #f7f7f7;    
+  border: 1px solid #ddd;       
+  border-radius: 24px;          
+  padding: 6px 10px;            
+  box-sizing: border-box;
+}
+
+/* アイコンボタン共通 */
+.input-container .icon-button {
+  background: none;      
+  border: none;          
+  cursor: pointer;       
+  font-size: 16px;       
+  width: 32px;           
+  height: 32px;          
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;           
+  border-radius: 50%;
+  transition: background 0.2s;
+  padding: 0;            
+  margin: 0;            
+}
+.input-container .icon-button:hover {
+  background: rgba(0,0,0,0.1);  
+}
+
+/* テキスト入力欄 */
+.input-container input {
+  flex: 1;               
+  border: none;          
+  outline: none;         
+  background: transparent;
+  margin: 0 8px;         
+  font-size: 14px;
+}
+
+/* タイピングインジケータ (...アニメ) */
 .typing-indicator .message-bubble {
   background: #fff;
   color: #888;
