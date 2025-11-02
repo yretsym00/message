@@ -28,7 +28,7 @@ html, body {
   border-radius: 4px;
   padding: 6px 10px;
   cursor: pointer;
-  position: relative;
+  position: relative; /* 未読ドット配置 */
 }
 
 /* サイドバー用の未読インジケータ（赤丸） */
@@ -62,9 +62,7 @@ html, body {
 }
 
 /* PCでは押し出し方式 */
-#talkList.open {
-  width: 150px;
-}
+#talkList.open { width: 150px; }
 
 /* スピーカー一覧アイテム */
 .talk-item {
@@ -75,19 +73,10 @@ html, body {
   transition: background-color 0.2s;
 }
 .talk-item:hover { background-color: #f0f0f0; }
-.talk-item-name {
-  font-size: 14px;
-  font-weight: bold;
-  color: #333;
-}
+.talk-item-name { font-size: 14px; font-weight: bold; color: #333; }
 .unread-icon {
-  width: 10px;
-  height: 10px;
-  background: red;
-  border-radius: 50%;
-  position: absolute;
-  top: 15px;
-  right: 10px;
+  width: 10px; height: 10px; background: red; border-radius: 50%;
+  position: absolute; top: 15px; right: 10px;
 }
 .talk-item.disabled { pointer-events: none; opacity: 0.5; }
 
@@ -99,6 +88,8 @@ html, body {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  position: relative;
+  z-index: 0; /* ドロワーを前面にするため背面に */
 }
 
 /* メッセージ表示領域 */
@@ -112,42 +103,26 @@ html, body {
 }
 
 /* メッセージ行 (左/右) */
-.message-row {
-  display: flex;
-  align-items: flex-end;
-  margin: 9px 0;
-}
+.message-row { display: flex; align-items: flex-end; margin: 9px 0; }
 .message-left { justify-content: flex-start; }
 .message-right { justify-content: flex-end; }
 
 /* アイコン (sp001, sp002, etc.) */
 .icon {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background-color: #ccc;
-  background-size: cover;
-  background-position: center;
-  margin: 0 8px;
+  width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%;
+  background-color: #ccc; background-size: cover; background-position: center; margin: 0 8px;
 }
-.sp001-icon {
-  background-image: url('https://raw.githubusercontent.com/yretsym00/message/main/docs/same.png');
-}
-.sp002-icon {
-  background-image: url('https://raw.githubusercontent.com/yretsym00/message/main/docs/kurage.png');
-}
-.speaker-icon {
-  background-image: url('https://raw.githubusercontent.com/xxx/xxx/main/speaker_dummy.png');
-}
+.sp001-icon { background-image: url('https://raw.githubusercontent.com/yretsym00/message/main/docs/same.png'); }
+.sp002-icon { background-image: url('https://raw.githubusercontent.com/yretsym00/message/main/docs/kurage.png'); }
+.speaker-icon { background-image: url('https://raw.githubusercontent.com/xxx/xxx/main/speaker_dummy.png'); }
 
 /* 吹き出し */
 .message-bubble {
   border-radius: 12px;
   padding: 8px 12px;
-  max-width: 88%;                /* モバイルで読みやすく */
+  max-width: 88%;
   line-height: 1.5;
-  font-size: 15px;               /* iOSのズーム抑止 */
+  font-size: 15px; /* iOSのズーム抑止 */
   word-wrap: break-word;
   white-space: pre-wrap;
   color: #111;
@@ -158,17 +133,11 @@ html, body {
 
 /* 画像はみ出し防止 */
 .message-bubble img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 8px;
+  max-width: 100%; height: auto; display: block; border-radius: 8px;
 }
 
 /* バブルラッパ */
-.bubble-wrapper {
-  position: relative;
-  display: inline-block;
-}
+.bubble-wrapper { position: relative; display: inline-block; }
 
 /* メタ情報(時刻など) */
 .metadata {
@@ -195,23 +164,13 @@ html, body {
   box-sizing: border-box;
 }
 #choicesArea button {
-  display: block;
-  width: 100%;
-  margin-bottom: 8px;
-  font-size: 15px;
-  padding: 12px 16px;
-  cursor: pointer;
-  border: 1px solid #ccc;
-  border-radius: 14px;
-  background-color: #fff;
-  color: #333;
-  box-shadow: none;
+  display: block; width: 100%; margin-bottom: 8px;
+  font-size: 15px; padding: 12px 16px; cursor: pointer;
+  border: 1px solid #ccc; border-radius: 14px;
+  background-color: #fff; color: #333; box-shadow: none;
   transition: background 0.2s, box-shadow 0.2s;
 }
-#choicesArea button:hover {
-  background-color: #f0f0f0;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
+#choicesArea button:hover { background-color: #f0f0f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
 /* 下部の吹き出し型入力エリア（固定＋安全域） */
 #inputArea {
@@ -226,93 +185,58 @@ html, body {
 
 /* 吹き出し風の枠 */
 .input-container {
-  display: flex;
-  align-items: center;
-  background-color: #f7f7f7;
-  border: 1px solid #ddd;
-  border-radius: 24px;
-  padding: 6px 10px;
-  box-sizing: border-box;
+  display: flex; align-items: center;
+  background-color: #f7f7f7; border: 1px solid #ddd; border-radius: 24px;
+  padding: 6px 10px; box-sizing: border-box;
 }
 
 /* アイコンボタン共通 */
 .input-container .icon-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 18px;
-  width: 40px;     /* タップ面積 */
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #666;
-  border-radius: 50%;
-  transition: background 0.2s;
-  padding: 0;
-  margin: 0;
+  background: none; border: none; cursor: pointer; font-size: 18px;
+  width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+  color: #666; border-radius: 50%; transition: background 0.2s; padding: 0; margin: 0;
 }
 .input-container .icon-button:hover { background: rgba(0,0,0,0.1); }
 
 /* テキスト入力欄 */
 .input-container input {
-  flex: 1;
-  border: none;
-  outline: none;
-  background: transparent;
-  margin: 0 8px;
-  font-size: 14px;
+  flex: 1; border: none; outline: none; background: transparent; margin: 0 8px; font-size: 14px;
 }
 
 /* タイピングインジケータ */
 .typing-indicator .message-bubble {
-  background: #fff;
-  color: #888;
-  font-style: italic;
-  min-width: 28px;
-  text-align: center;
+  background: #fff; color: #888; font-style: italic; min-width: 28px; text-align: center;
 }
 
 /* ===============================
-   モバイル最適化
+   モバイル最適化（ドロワー＋重なり順）
 =============================== */
 @media (max-width: 900px) {
   #container { position: relative; }
 
-  /* サイドバーをドロワー化（オーバーレイ） */
+  /* ドロワーとして前面に */
   #talkList {
     position: absolute;
-    top: 0;
-    left: 0;
+    top: 0; left: 0;
     height: calc(100dvh - 48px);
     width: min(80vw, 300px);
     box-shadow: 2px 0 12px rgba(0,0,0,0.15);
     transform: translateX(-100%);
     visibility: hidden;
+    z-index: 1000; /* ← 重要：チャットより前面 */
   }
-  #talkList.open {
-    transform: translateX(0);
-    visibility: visible;
-  }
+  #talkList.open { transform: translateX(0); visibility: visible; }
 
   /* 展開中は背面スクロールを止める */
-  body.drawer-open {
-    overflow: hidden;
-    touch-action: none;
-  }
+  body.drawer-open { overflow: hidden; touch-action: none; }
 
   /* メタ情報は下段に並べる */
   .metadata {
-    position: static;
-    margin-top: 4px;
-    font-size: 10px;
-    color: #666;
-    display: flex;
-    gap: 6px;
+    position: static; margin-top: 4px; font-size: 10px; color: #666;
+    display: flex; gap: 6px;
   }
-  .metadata-user, .metadata-speaker {
-    margin: 0;
-    right: auto;
-    left: auto;
-  }
+  .metadata-user, .metadata-speaker { margin: 0; right: auto; left: auto; }
+
+  /* ヘッダーは最前面に固定（任意） */
+  #topBar { position: sticky; top: 0; z-index: 1100; }
 }
