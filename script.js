@@ -159,9 +159,7 @@ inputResizeObserver.observe(inputArea);
 ========================================= */
 function findTalkItemById(speakerId) {
   const items = document.querySelectorAll(".talk-item");
-  for (const it of items) {
-    if (it.dataset.speakerId === speakerId) return it;
-  }
+  for (const it of items) if (it.dataset.speakerId === speakerId) return it;
   return null;
 }
 
@@ -220,6 +218,7 @@ function addSpeakerToList(speakerId, speakerName, unread = false) {
       updateSidebarToggleUnreadIndicator();
     }
     startConversation(speakerId);
+
     // ドロワーは閉じる
     if (talkList.classList.contains("open")) {
       talkList.classList.remove("open");
@@ -275,8 +274,7 @@ function restoreConversationHistory(speakerId) {
   const info = speakerConversations[speakerId];
   if (!info) return;
 
-  const history = info.messages;
-  for (const msg of history) {
+  for (const msg of info.messages) {
     const rowDiv = document.createElement("div");
     rowDiv.className =
       "message-row " + (msg.speakerName === "あなた" ? "message-right" : "message-left");
@@ -332,11 +330,8 @@ async function displayFromId(startId) {
     if (currentSpeakerId !== initialSpeakerId) break;
 
     const waitSec = parseInt(currentRow.waittime_seconds || "0", 10);
-    if (waitSec > 0) {
-      await sleep(waitSec * 1000);
-    } else {
-      await sleep(getDelayForMessage(currentRow.message));
-    }
+    if (waitSec > 0) await sleep(waitSec * 1000);
+    else await sleep(getDelayForMessage(currentRow.message));
 
     const rowSpeakerId = currentRow.speakerId;
     const rowSpeakerName = currentRow.speakerName;
@@ -364,23 +359,15 @@ async function displayFromId(startId) {
       speakerConversations[initialSpeakerId].currentId = currentRow.id;
 
       if (currentRow.message.trim() !== "") {
-        addMessageToChat(
-          "USER",
-          "あなた",
-          currentRow.message,
-          currentRow.image,
-          currentRow.imageURL
-        );
+        addMessageToChat("USER", "あなた", currentRow.message, currentRow.image, currentRow.imageURL);
         if (!nextRow) break;
         currentRow = nextRow;
         continue;
       }
 
-      if (
-        currentRow.input ||
-        currentRow.choice1 || currentRow.choice2 ||
-        currentRow.choice3 || currentRow.choice4
-      ) {
+      if (currentRow.input ||
+          currentRow.choice1 || currentRow.choice2 ||
+          currentRow.choice3 || currentRow.choice4) {
         await handleUserTurn(currentRow);
       }
       break;
@@ -415,20 +402,10 @@ async function displayFromId(startId) {
 ========================================= */
 async function handleUserTurn(row) {
   const {
-    input,
-    answer,
-    TrueId,
-    NGid,
+    input, answer, TrueId, NGid,
     choice1, choice2, choice3, choice4,
     nextId1, nextId2, nextId3, nextId4,
-    choice1URL,
-    Tweettext1,
-    choice2URL,
-    Tweettext2,
-    choice3URL,
-    Tweettext3,
-    choice4URL,
-    Tweettext4
+    Tweettext1, Tweettext2, Tweettext3, Tweettext4
   } = row;
 
   inputArea.style.display = "none";
@@ -455,7 +432,6 @@ async function handleUserTurn(row) {
           btn.disabled = true;
 
           addMessageToChat("USER", "あなた", ch.text);
-
           choicesArea.style.display = "none";
 
           if (ch.tweetText) {
@@ -482,10 +458,7 @@ async function handleUserTurn(row) {
     let timerId = null;
 
     const proceedToNextMessage = async () => {
-      if (timerId) {
-        clearTimeout(timerId);
-        timerId = null;
-      }
+      if (timerId) { clearTimeout(timerId); timerId = null; }
       inputArea.style.display = "none";
       showTypingIndicator(false);
       await sleep(getTypingWaitTime());
@@ -503,10 +476,7 @@ async function handleUserTurn(row) {
       sendBtn.disabled = true;
 
       const userText = userInput.value.trim();
-      if (!userText) {
-        sendBtn.disabled = false;
-        return;
-      }
+      if (!userText) { sendBtn.disabled = false; return; }
 
       addMessageToChat("USER", "あなた", userText);
       userInput.value = "";
@@ -520,11 +490,9 @@ async function handleUserTurn(row) {
             speakerConversations[currentSpeakerId].currentId = parseInt(TrueId, 10);
             await displayFromId(parseInt(TrueId, 10));
           }
-        } else {
-          if (NGid) {
-            speakerConversations[currentSpeakerId].currentId = parseInt(NGid, 10);
-            await displayFromId(parseInt(NGid, 10));
-          }
+        } else if (NGid) {
+          speakerConversations[currentSpeakerId].currentId = parseInt(NGid, 10);
+          await displayFromId(parseInt(NGid, 10));
         }
       } else {
         await proceedToNextMessage();
@@ -540,21 +508,13 @@ async function handleUserTurn(row) {
 ========================================= */
 function addMessageToChat(speakerId, speakerName, text, image = "", imageURL = "") {
   if (!speakerConversations[currentSpeakerId]) {
-    speakerConversations[currentSpeakerId] = {
-      speakerName: speakerId,
-      messages: [],
-      currentId: null
-    };
+    speakerConversations[currentSpeakerId] = { speakerName: speakerId, messages: [], currentId: null };
   }
 
   const nowString = getCurrentTimeString();
 
   speakerConversations[currentSpeakerId].messages.push({
-    speakerName,
-    text,
-    image,
-    imageURL,
-    timestamp: nowString
+    speakerName, text, image, imageURL, timestamp: nowString
   });
 
   const rowDiv = document.createElement("div");
@@ -627,10 +587,7 @@ function showTypingIndicator(isUserSide = false) {
 
   typingIndicatorInterval = setInterval(() => {
     stateIndex++;
-    if (stateIndex >= states.length) {
-      stateIndex = 0;
-      cycleCount++;
-    }
+    if (stateIndex >= states.length) { stateIndex = 0; cycleCount++; }
     bubble.innerHTML = states[stateIndex];
     if (cycleCount >= 2 && stateIndex === states.length - 1) {
       clearInterval(typingIndicatorInterval);
@@ -641,10 +598,7 @@ function showTypingIndicator(isUserSide = false) {
 }
 
 function hideTypingIndicator() {
-  if (typingIndicatorInterval) {
-    clearInterval(typingIndicatorInterval);
-    typingIndicatorInterval = null;
-  }
+  if (typingIndicatorInterval) { clearInterval(typingIndicatorInterval); typingIndicatorInterval = null; }
   if (typingIndicatorDiv && typingIndicatorDiv.parentNode) {
     typingIndicatorDiv.parentNode.removeChild(typingIndicatorDiv);
     typingIndicatorDiv = null;
@@ -676,8 +630,7 @@ function getDelayForMessage(msg) {
 }
 
 function getTypingWaitTime() {
-  const min = 1200;
-  const max = 2500;
+  const min = 1200, max = 2500;
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
@@ -688,18 +641,9 @@ function getCurrentTimeString() {
   return `${hh}:${mm}`;
 }
 
-function disableAllSpeakers() {
-  talkList.style.pointerEvents = "none";
-  talkList.style.opacity = "0.6";
-}
-function enableAllSpeakers() {
-  talkList.style.pointerEvents = "auto";
-  talkList.style.opacity = "";
-}
-function isSPid(spId) {
-  if (!spId) return false;
-  return spId.toUpperCase().startsWith("SP");
-}
+function disableAllSpeakers() { talkList.style.pointerEvents = "none"; talkList.style.opacity = "0.6"; }
+function enableAllSpeakers() { talkList.style.pointerEvents = "auto"; talkList.style.opacity = ""; }
+function isSPid(spId) { return !!spId && spId.toUpperCase().startsWith("SP"); }
 
 /* メッセージ領域の下余白を入力欄の高さに合わせる */
 function padBottomForInput() {
