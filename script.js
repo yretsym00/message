@@ -23,6 +23,9 @@ const sidebarToggleBtn = document.getElementById("sidebarToggle");
 
 let isConversationRunning = false;
 
+// 自由入力用のキーイベントハンドラ参照を保持して重複を防ぐ
+let freeInputKeyHandler = null;
+
 /* =========================================
    1') 100vh対策のCSS変数更新
 ========================================= */
@@ -130,23 +133,20 @@ window.addEventListener("load", async () => {
 
   } catch (err) {
     console.error(err);
-    messageContainer.textContent =
-      "データ取得失敗。URLや公開設定などを確認してください。";
+    messageContainer.textContent = "データ取得失敗。URLや公開設定などを確認してください。";
   }
 
-  // サイドバートグル（ドロワー用にbodyクラスを付け外し）
+  // サイドバー開閉
   sidebarToggleBtn.addEventListener("click", () => {
     talkList.classList.toggle("open");
     const isOpen = talkList.classList.contains("open");
     document.body.classList.toggle("drawer-open", isOpen);
   });
 
-  // 左ボタン例
   addBtn.addEventListener("click", () => {
     alert("左ボタンがクリックされました（例）");
   });
 
-  // 入力エリア高さぶんの下余白をメッセージ領域に確保
   padBottomForInput();
 });
 
@@ -219,7 +219,6 @@ function addSpeakerToList(speakerId, speakerName, unread = false) {
     }
     startConversation(speakerId);
 
-    // ドロワーは閉じる
     if (talkList.classList.contains("open")) {
       talkList.classList.remove("open");
       document.body.classList.remove("drawer-open");
@@ -412,6 +411,14 @@ async function handleUserTurn(row) {
   choicesArea.style.display = "none";
   userInput.value = "";
 
+  // 既存の自由入力ハンドラを解除
+  sendBtn.onclick = null;
+  sendBtn.disabled = false;
+  if (freeInputKeyHandler) {
+    userInput.removeEventListener("keydown", freeInputKeyHandler);
+    freeInputKeyHandler = null;
+  }
+
   // ——— 選択肢 ———
   if (choice1 || choice2 || choice3 || choice4) {
     choicesArea.innerHTML = "";
@@ -445,7 +452,6 @@ async function handleUserTurn(row) {
             speakerConversations[currentSpeakerId].currentId = parseInt(ch.nextId, 10);
             await displayFromId(parseInt(ch.nextId, 10));
           }
-
           resolve();
         };
 
@@ -453,11 +459,23 @@ async function handleUserTurn(row) {
       });
     });
 
-  // ——— 自由入力（自動進行しない） ———
+  // ——— 自由入力（自動進行なし、空送信不可） ———
   } else if (input === "自由入力") {
     inputArea.style.display = "block";
+    sendBtn.disabled = false;
+    userInput.focus();
 
-    // 送信ボタンの動作を上書き（空送信は無視）
+    // Enter確定（IME変換中は無効）
+    freeInputKeyHandler = (e) => {
+      if (e.isComposing) return;
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendBtn.click();
+      }
+    };
+    userInput.addEventListener("keydown", freeInputKeyHandler);
+
+    // 送信ボタン
     sendBtn.onclick = async () => {
       if (sendBtn.disabled) return;
 
@@ -466,34 +484,44 @@ async function handleUserTurn(row) {
 
       sendBtn.disabled = true;
 
-      // ユーザー発言を表示
       addMessageToChat("USER", "あなた", userText);
       userInput.value = "";
       await sleep(300);
 
-      // バリデーションあり
       if (answer) {
         const validAnswers = answer.split("|").map(s => s.trim());
         if (validAnswers.includes(userText)) {
           await proceed(TrueId);
+          return;
         } else if (NGid) {
           await proceed(NGid);
+          return;
         } else {
-          // 不正解かつNG遷移なし → 再入力待ち
+          // 再入力待ち
           sendBtn.disabled = false;
+          userInput.focus();
+          return;
         }
       } else {
-        // バリデーションなし → TrueId があれば進む。無ければ待機
         if (TrueId) {
           await proceed(TrueId);
+          return;
         } else {
+          // 遷移先なし → その場で再入力待ち
           sendBtn.disabled = false;
+          userInput.focus();
+          return;
         }
       }
     };
 
-    // 共通遷移。自動では呼ばない
     async function proceed(nextId) {
+      // この自由入力用リスナーを解除してから遷移
+      sendBtn.onclick = null;
+      if (freeInputKeyHandler) {
+        userInput.removeEventListener("keydown", freeInputKeyHandler);
+        freeInputKeyHandler = null;
+      }
       inputArea.style.display = "none";
       showTypingIndicator(false);
       await sleep(getTypingWaitTime());
