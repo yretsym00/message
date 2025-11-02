@@ -15,7 +15,7 @@ html, body {
 #topBar {
   background: #fff;
   border-bottom: 1px solid #ccc;
-  height: 48px;                /* お好みで高さ調整 */
+  height: 48px;
   display: flex;
   align-items: center;
 }
@@ -28,40 +28,40 @@ html, body {
   border-radius: 4px;
   padding: 6px 10px;
   cursor: pointer;
-  position: relative; /* 未読インジケータ配置のため */
+  position: relative;
 }
 
 /* サイドバー用の未読インジケータ（赤丸） */
 .sidebar-toggle .sidebar-unread {
   position: absolute;
-  top: -5px;    /* ここで丸の位置を微調整 (上に) */
-  right: -5px;  /* ここで丸の位置を微調整 (右に) */
+  top: -5px;
+  right: -5px;
   width: 10px;
   height: 10px;
   background-color: red;
   border-radius: 50%;
-  pointer-events: none; /* クリックを邪魔しない */
+  pointer-events: none;
 }
 
 /* ===============================
    メインコンテナ: サイドバー + チャット
 =============================== */
 #container {
-  display: flex;                       /* 横並び */
-  height: calc(100vh - 48px);          /* ヘッダーを除いた残り高さ */
+  display: flex;
+  height: calc(100dvh - 48px); /* モバイルのアドレスバー対策 */
   background-color: #8AAECB;
 }
 
 /* サイドバー(スピーカー一覧) */
 #talkList {
-  width: 0;                            /* 初期は幅0 */
+  width: 0;
   overflow: hidden;
   background-color: #fff;
   border-right: 1px solid #ccc;
-  transition: width 0.3s ease;         /* 幅のアニメーション */
+  transition: width 0.3s ease, transform 0.25s ease, visibility 0s linear 0.25s;
 }
 
-/* .open が付いたら幅150pxに (お好みで調整) */
+/* PCでは押し出し方式 */
 #talkList.open {
   width: 150px;
 }
@@ -74,9 +74,7 @@ html, body {
   position: relative;
   transition: background-color 0.2s;
 }
-.talk-item:hover {
-  background-color: #f0f0f0;
-}
+.talk-item:hover { background-color: #f0f0f0; }
 .talk-item-name {
   font-size: 14px;
   font-weight: bold;
@@ -91,18 +89,15 @@ html, body {
   top: 15px;
   right: 10px;
 }
-.talk-item.disabled {
-  pointer-events: none;
-  opacity: 0.5;
-}
+.talk-item.disabled { pointer-events: none; opacity: 0.5; }
 
 /* ===============================
    チャットエリア
 =============================== */
 #chatArea {
-  flex: 1;                           /* サイドバー以外をすべて使う */
+  flex: 1;
   display: flex;
-  flex-direction: column;            /* 縦方向に並べる */
+  flex-direction: column;
   box-sizing: border-box;
 }
 
@@ -110,9 +105,10 @@ html, body {
 #messageContainer {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 12px;
   background-color: #8AAECB;
   box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* メッセージ行 (左/右) */
@@ -121,12 +117,8 @@ html, body {
   align-items: flex-end;
   margin: 9px 0;
 }
-.message-left {
-  justify-content: flex-start;
-}
-.message-right {
-  justify-content: flex-end;
-}
+.message-left { justify-content: flex-start; }
+.message-right { justify-content: flex-end; }
 
 /* アイコン (sp001, sp002, etc.) */
 .icon {
@@ -153,17 +145,23 @@ html, body {
 .message-bubble {
   border-radius: 12px;
   padding: 8px 12px;
-  max-width: 80%;
+  max-width: 88%;                /* モバイルで読みやすく */
   line-height: 1.5;
-  font-size: 14px;
+  font-size: 15px;               /* iOSのズーム抑止 */
   word-wrap: break-word;
   white-space: pre-wrap;
   color: #111;
   background-color: #fff;
   margin: 0 8px;
 }
-.message-right .message-bubble {
-  background-color: #9EEA9C; /* 右(ユーザー)側の吹き出し色 */
+.message-right .message-bubble { background-color: #9EEA9C; }
+
+/* 画像はみ出し防止 */
+.message-bubble img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
 }
 
 /* バブルラッパ */
@@ -172,7 +170,7 @@ html, body {
   display: inline-block;
 }
 
-/* メタ情報 (時刻など) */
+/* メタ情報(時刻など) */
 .metadata {
   position: absolute;
   bottom: 0;
@@ -183,15 +181,8 @@ html, body {
   flex-direction: column;
   white-space: nowrap;
 }
-.metadata-speaker {
-  left: 100%;
-  margin-left: 3px;
-}
-.metadata-user {
-  right: 100%;
-  margin-right: 6px;
-  align-items: flex-end;
-}
+.metadata-speaker { left: 100%; margin-left: 3px; }
+.metadata-user { right: 100%; margin-right: 6px; align-items: flex-end; }
 
 /* ===============================
    選択肢エリア / 入力エリア
@@ -199,85 +190,129 @@ html, body {
 #choicesArea {
   display: none;
   padding: 10px;
-  background: #8AAECB;       /* 選択肢周りの背景色 */
+  background: #8AAECB;
   border-top: 1px solid #8AAECB;
   box-sizing: border-box;
 }
 #choicesArea button {
   display: block;
   width: 100%;
-  margin-bottom: 8px;          /* ボタン間の余白 */
-  font-size: 14px;
-  padding: 7px 16px;           /* 内側の余白 */
+  margin-bottom: 8px;
+  font-size: 15px;
+  padding: 12px 16px;
   cursor: pointer;
-
-  /* ▼ 枠線 & 角丸 & 色など */
-  border: 1px solid #ccc;     
-  border-radius: 12px;        
-  background-color: #fff;     
-  color: #333;                
-  box-shadow: none;           
+  border: 1px solid #ccc;
+  border-radius: 14px;
+  background-color: #fff;
+  color: #333;
+  box-shadow: none;
   transition: background 0.2s, box-shadow 0.2s;
 }
 #choicesArea button:hover {
-  background-color: #f0f0f0;  
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+  background-color: #f0f0f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-/* 下部の吹き出し型入力エリア */
+/* 下部の吹き出し型入力エリア（固定＋安全域） */
 #inputArea {
-  display: block;               
   background: #fff;
   border-top: 1px solid #ccc;
   box-sizing: border-box;
   padding: 10px;
+  position: sticky;
+  bottom: 0;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
 }
 
-/* 吹き出し風の枠を作る */
+/* 吹き出し風の枠 */
 .input-container {
   display: flex;
   align-items: center;
-  background-color: #f7f7f7;    
-  border: 1px solid #ddd;       
-  border-radius: 24px;          
-  padding: 6px 10px;            
+  background-color: #f7f7f7;
+  border: 1px solid #ddd;
+  border-radius: 24px;
+  padding: 6px 10px;
   box-sizing: border-box;
 }
 
 /* アイコンボタン共通 */
 .input-container .icon-button {
-  background: none;      
-  border: none;          
-  cursor: pointer;       
-  font-size: 16px;       
-  width: 32px;           
-  height: 32px;          
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  width: 40px;     /* タップ面積 */
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #666;           
+  color: #666;
   border-radius: 50%;
   transition: background 0.2s;
-  padding: 0;            
-  margin: 0;            
+  padding: 0;
+  margin: 0;
 }
-.input-container .icon-button:hover {
-  background: rgba(0,0,0,0.1);  
-}
+.input-container .icon-button:hover { background: rgba(0,0,0,0.1); }
 
 /* テキスト入力欄 */
 .input-container input {
-  flex: 1;               
-  border: none;          
-  outline: none;         
+  flex: 1;
+  border: none;
+  outline: none;
   background: transparent;
-  margin: 0 8px;         
+  margin: 0 8px;
   font-size: 14px;
 }
 
-/* タイピングインジケータ (...アニメ) */
+/* タイピングインジケータ */
 .typing-indicator .message-bubble {
   background: #fff;
   color: #888;
   font-style: italic;
+  min-width: 28px;
+  text-align: center;
+}
+
+/* ===============================
+   モバイル最適化
+=============================== */
+@media (max-width: 900px) {
+  #container { position: relative; }
+
+  /* サイドバーをドロワー化（オーバーレイ） */
+  #talkList {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: calc(100dvh - 48px);
+    width: min(80vw, 300px);
+    box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+    transform: translateX(-100%);
+    visibility: hidden;
+  }
+  #talkList.open {
+    transform: translateX(0);
+    visibility: visible;
+  }
+
+  /* 展開中は背面スクロールを止める */
+  body.drawer-open {
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  /* メタ情報は下段に並べる */
+  .metadata {
+    position: static;
+    margin-top: 4px;
+    font-size: 10px;
+    color: #666;
+    display: flex;
+    gap: 6px;
+  }
+  .metadata-user, .metadata-speaker {
+    margin: 0;
+    right: auto;
+    left: auto;
+  }
 }
