@@ -412,6 +412,7 @@ async function handleUserTurn(row) {
   choicesArea.style.display = "none";
   userInput.value = "";
 
+  // ——— 選択肢 ———
   if (choice1 || choice2 || choice3 || choice4) {
     choicesArea.innerHTML = "";
     choicesArea.style.display = "block";
@@ -452,54 +453,56 @@ async function handleUserTurn(row) {
       });
     });
 
+  // ——— 自由入力（自動進行しない） ———
   } else if (input === "自由入力") {
     inputArea.style.display = "block";
-    const originalOnclick = sendBtn.onclick;
-    let timerId = null;
 
-    const proceedToNextMessage = async () => {
-      if (timerId) { clearTimeout(timerId); timerId = null; }
+    // 送信ボタンの動作を上書き（空送信は無視）
+    sendBtn.onclick = async () => {
+      if (sendBtn.disabled) return;
+
+      const userText = userInput.value.trim();
+      if (!userText) { userInput.focus(); return; }
+
+      sendBtn.disabled = true;
+
+      // ユーザー発言を表示
+      addMessageToChat("USER", "あなた", userText);
+      userInput.value = "";
+      await sleep(300);
+
+      // バリデーションあり
+      if (answer) {
+        const validAnswers = answer.split("|").map(s => s.trim());
+        if (validAnswers.includes(userText)) {
+          await proceed(TrueId);
+        } else if (NGid) {
+          await proceed(NGid);
+        } else {
+          // 不正解かつNG遷移なし → 再入力待ち
+          sendBtn.disabled = false;
+        }
+      } else {
+        // バリデーションなし → TrueId があれば進む。無ければ待機
+        if (TrueId) {
+          await proceed(TrueId);
+        } else {
+          sendBtn.disabled = false;
+        }
+      }
+    };
+
+    // 共通遷移。自動では呼ばない
+    async function proceed(nextId) {
       inputArea.style.display = "none";
       showTypingIndicator(false);
       await sleep(getTypingWaitTime());
       hideTypingIndicator();
-      if (TrueId) {
-        speakerConversations[currentSpeakerId].currentId = parseInt(TrueId, 10);
-        await displayFromId(parseInt(TrueId, 10));
+      if (nextId) {
+        speakerConversations[currentSpeakerId].currentId = parseInt(nextId, 10);
+        await displayFromId(parseInt(nextId, 10));
       }
-    };
-
-    timerId = setTimeout(proceedToNextMessage, 10000);
-
-    sendBtn.onclick = async () => {
-      if (sendBtn.disabled) return;
-      sendBtn.disabled = true;
-
-      const userText = userInput.value.trim();
-      if (!userText) { sendBtn.disabled = false; return; }
-
-      addMessageToChat("USER", "あなた", userText);
-      userInput.value = "";
-      sendBtn.onclick = originalOnclick;
-      await sleep(500);
-
-      if (answer) {
-        const validAnswers = answer.split("|");
-        if (validAnswers.includes(userText)) {
-          if (TrueId) {
-            speakerConversations[currentSpeakerId].currentId = parseInt(TrueId, 10);
-            await displayFromId(parseInt(TrueId, 10));
-          }
-        } else if (NGid) {
-          speakerConversations[currentSpeakerId].currentId = parseInt(NGid, 10);
-          await displayFromId(parseInt(NGid, 10));
-        }
-      } else {
-        await proceedToNextMessage();
-      }
-
-      sendBtn.disabled = false;
-    };
+    }
   }
 }
 
