@@ -3,54 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <title>Talk App Sample (Push Layout + Bubble Input)</title>
-  <!-- CSS -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-
-  <!-- ▼ 画面上部のヘッダー。左上にサイドバー開閉ボタンを置く -->
   <header id="topBar">
     <button id="sidebarToggle" class="sidebar-toggle">≡</button>
     <span style="margin-left: 8px;"></span>
   </header>
 
-  <!-- ▼ メインコンテナ: サイドバー + チャットエリアを横並びで配置 -->
   <div id="container">
-    <!-- サイドバー(スピーカー一覧) -->
-    <div id="talkList">
-      <!-- スピーカー項目(.talk-item)が動的に追加される -->
-    </div>
+    <div id="talkList"></div>
 
-    <!-- チャットエリア -->
     <div id="chatArea">
-      <!-- メッセージ表示領域 -->
       <div id="messageContainer">ロード中...</div>
-
-      <!-- 選択肢エリア -->
       <div id="choicesArea"></div>
 
-      <!-- 自由入力エリア (吹き出し型) -->
       <div id="inputArea">
         <div class="input-container">
-          <!-- 左アイコンボタン(例: 「＋」などお好みで) -->
           <button id="addBtn" class="icon-button">➕</button>
-
-          <!-- テキスト入力欄 -->
-          <input
-            id="userInput"
-            type="text"
-            placeholder="メッセージを入力"
-          />
-
-          <!-- 右アイコンボタン(例: 絵文字や紙飛行機アイコンなど) -->
+          <input id="userInput" type="text" placeholder="メッセージを入力" />
           <button id="sendBtn" class="icon-button">➡️</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- JS -->
   <script src="./script.js"></script>
 </body>
 </html>
-
