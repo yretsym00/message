@@ -2,7 +2,8 @@
    1) グローバル変数・定義
 ========================================= */
 const SPREADSHEET_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQOpH43k0f6Cc0Qn1gzXsnJNDybSce7CTW1hOWBgvTJIfTPuaZsEpcbO1u9E7CIQSSGzAHa4ZST7fFw/pub?output=csv";
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQOpH43k0f6Cc0Qn1gzXsnJNDybSce7CTW1hOWBgvTJIfTPuaZsEpcbO1u9E7CIQSSGzAHa4ZST7fFw/pub?gid=1835455716&single=true&output=csv"　//闇バイト
+ // "https://docs.google.com/spreadsheets/d/e/2PACX-1vQOpH43k0f6Cc0Qn1gzXsnJNDybSce7CTW1hOWBgvTJIfTPuaZsEpcbO1u9E7CIQSSGzAHa4ZST7fFw/pub?output=csv"; //山野井
 
 let conversations = [];
 let currentSpeakerId = null;
@@ -507,9 +508,26 @@ async function handleUserTurn(row) {
   }
   // 自由入力
   else if (input === "自由入力") {
-    inputArea.style.display = "block";  // or "flex"
-    // 右ボタン(紙飛行機など)で送信する想定
+    inputArea.style.display = "block";
     const originalOnclick = sendBtn.onclick;
+    let timerId = null;
+
+    const proceedToNextMessage = async () => {
+      if (timerId) {
+        clearTimeout(timerId);
+        timerId = null;
+      }
+      inputArea.style.display = "none";
+      showTypingIndicator(false);
+      await sleep(getTypingWaitTime());
+      hideTypingIndicator();
+      if (TrueId) {
+        speakerConversations[currentSpeakerId].currentId = parseInt(TrueId, 10);
+        await displayFromId(parseInt(TrueId, 10));
+      }
+    };
+
+    timerId = setTimeout(proceedToNextMessage, 10000);
 
     sendBtn.onclick = async () => {
       if (sendBtn.disabled) return;
@@ -521,21 +539,11 @@ async function handleUserTurn(row) {
         return;
       }
 
-      // ▼ ユーザーのタイピング演出を削除し、即時表示
       addMessageToChat("USER", "あなた", userText);
       userInput.value = "";
-
-      // イベントを元に戻す
       sendBtn.onclick = originalOnclick;
-
       await sleep(500);
 
-      // ここからはスピーカー側の応答を待つ演出など
-      showTypingIndicator(false);
-      await sleep(getTypingWaitTime());
-      hideTypingIndicator();
-
-      // 入力チェック
       if (answer) {
         const validAnswers = answer.split("|");
         if (validAnswers.includes(userText)) {
@@ -549,6 +557,8 @@ async function handleUserTurn(row) {
             await displayFromId(parseInt(NGid, 10));
           }
         }
+      } else {
+        await proceedToNextMessage();
       }
 
       sendBtn.disabled = false;
