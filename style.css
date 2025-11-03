@@ -55,6 +55,8 @@ html, body {
 #messageContainer {
   flex: 1; overflow-y: auto; padding: 12px; background: #8AAECB;
   -webkit-overflow-scrolling: touch;
+  /* ▼ 末尾が入力UIに隠れないためのスクロール余白 */
+  scroll-padding-bottom: var(--input-h, 96px);
 }
 .message-row { display: flex; align-items: flex-end; margin: 9px 0; }
 .message-left { justify-content: flex-start; }
@@ -122,16 +124,18 @@ html, body {
 }
 
 /* タイピング */
-.typing-indicator .message-bubble { background: #fff; color: #888; font-style: italic; min-width: 28px; text-align: center; }
+.typing-indicator .message-bubble {
+  background: #fff; color: #888; font-style: italic; min-width: 28px; text-align: center;
+}
 
-/* モバイル最適化 */
+/* モバイル最適化（ドロワー＋重なり順） */
 @media (max-width: 900px) {
   #container { position: relative; }
 
   #talkList {
     position: absolute; top: 0; left: 0; height: calc(100dvh - 48px);
     width: min(80vw, 300px); box-shadow: 2px 0 12px rgba(0,0,0,0.15);
-    transform: translateX(-100%); visibility: hidden; z-index: 1000;
+    transform: translateX(-100%); visibility: hidden; z-index: 1000; /* 前面へ */
   }
   #talkList.open { transform: translateX(0); visibility: visible; }
 
