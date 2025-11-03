@@ -22,6 +22,10 @@ const sidebarToggleBtn = document.getElementById("sidebarToggle");
 let isConversationRunning = false;
 let freeInputKeyHandler = null;
 
+/* ===== 入力UI露出の待ち時間 ===== */
+const INPUT_REVEAL_MIN = 700;   // ms
+const INPUT_REVEAL_MAX = 1800;  // ms
+
 /* =========================================
    100vh対策
 ========================================= */
@@ -98,9 +102,7 @@ window.addEventListener("load", async () => {
 
   addBtn.addEventListener("click", () => { alert("左ボタンがクリックされました（例）"); });
 
-  // iOSのズームを解除しやすくするため、初回に入力欄へフォーカスを付けない
-  userInput.blur();
-
+  userInput.blur();  // 初回に自動ズームさせない
   padBottomForInput();
 });
 
@@ -157,7 +159,7 @@ function addSpeakerToList(speakerId, speakerName, unread=false) {
     if (talkList.classList.contains("open")) {
       talkList.classList.remove("open"); document.body.classList.remove("drawer-open");
     }
-    blurActive(); // ← フォーカスでズームしないよう外す
+    blurActive();
   });
 
   talkList.appendChild(item);
@@ -291,6 +293,27 @@ async function displayFromId(startId) {
 }
 
 /* =========================================
+   入力UI露出の準備（表示前に少し待つ）
+========================================= */
+async function prepareToRevealInput() {
+  const bubbles = messageContainer.querySelectorAll(".message-bubble");
+  const lastBubble = bubbles[bubbles.length - 1];
+
+  let wait = INPUT_REVEAL_MIN;
+  if (lastBubble) {
+    const h = lastBubble.getBoundingClientRect().height || 0;
+    wait = Math.round(Math.min(INPUT_REVEAL_MAX, Math.max(INPUT_REVEAL_MIN, h * 6)));
+  }
+
+  messageContainer.scrollTop = messageContainer.scrollHeight;
+
+  if (document.querySelector(".typing-indicator")) {
+    wait = Math.max(wait, 1000);
+  }
+  await sleep(wait);
+}
+
+/* =========================================
    入力ターン
 ========================================= */
 async function handleUserTurn(row) {
@@ -309,6 +332,9 @@ async function handleUserTurn(row) {
   sendBtn.onclick = null;
   sendBtn.disabled = false;
   if (freeInputKeyHandler) { userInput.removeEventListener("keydown", freeInputKeyHandler); freeInputKeyHandler = null; }
+
+  // 入力UIを出す前に、直前の会話が目に入るまで待つ
+  await prepareToRevealInput();
 
   // ——— 選択肢 ———
   if (choice1 || choice2 || choice3 || choice4) {
@@ -332,7 +358,7 @@ async function handleUserTurn(row) {
 
           addMessageToChat("USER", "あなた", ch.text);
           choicesArea.style.display = "none";
-          blurActive(); // ← ズーム解除
+          blurActive();
 
           if (ch.tweetText) {
             const u = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(ch.tweetText);
@@ -354,16 +380,12 @@ async function handleUserTurn(row) {
   } else if (input === "自由入力") {
     inputArea.style.display = "block";
     sendBtn.disabled = false;
-    userInput.blur(); // 直後の自動ズーム防止
-    setTimeout(() => userInput.focus(), 50); // 安定してからフォーカス
+    userInput.blur();
+    setTimeout(() => userInput.focus(), 50);
 
-    // Enter確定（IME変換中は無効）
     freeInputKeyHandler = (e) => {
       if (e.isComposing) return;
-      if (e.key === "Enter") {
-        e.preventDefault();
-        sendBtn.click();
-      }
+      if (e.key === "Enter") { e.preventDefault(); sendBtn.click(); }
     };
     userInput.addEventListener("keydown", freeInputKeyHandler);
 
@@ -377,7 +399,7 @@ async function handleUserTurn(row) {
 
       addMessageToChat("USER", "あなた", userText);
       userInput.value = "";
-      blurActive(); // ← 送信後にフォーカスを外してズーム解除
+      blurActive();
       await sleep(300);
 
       if (answer) {
@@ -392,7 +414,6 @@ async function handleUserTurn(row) {
     };
 
     async function proceed(nextId) {
-      // リスナー解除
       sendBtn.onclick = null;
       if (freeInputKeyHandler) { userInput.removeEventListener("keydown", freeInputKeyHandler); freeInputKeyHandler = null; }
       inputArea.style.display = "none";
