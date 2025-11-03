@@ -23,8 +23,8 @@ let isConversationRunning = false;
 let freeInputKeyHandler = null;
 
 /* ===== 入力UI露出の待ち時間（拡張） ===== */
-const INPUT_REVEAL_MIN = 1100;   // ms
-const INPUT_REVEAL_MAX = 2600;   // ms
+const INPUT_REVEAL_MIN = 1100;
+const INPUT_REVEAL_MAX = 2600;
 
 /* =========================================
    100vh対策
@@ -291,10 +291,9 @@ async function displayFromId(startId) {
 }
 
 /* =========================================
-   入力UI露出の準備（表示前の待機とスクロール調整）
+   入力UI露出の準備（待機＋余白＋スクロール）
 ========================================= */
 async function prepareToRevealInput() {
-  // 直近バブルの高さに応じて待つ
   const bubbles = messageContainer.querySelectorAll(".message-bubble");
   const lastBubble = bubbles[bubbles.length - 1];
 
@@ -304,31 +303,19 @@ async function prepareToRevealInput() {
     wait = Math.round(Math.min(INPUT_REVEAL_MAX, Math.max(INPUT_REVEAL_MIN, h * 6)));
   }
 
-  // 入力UIの高さぶんの余白をまず反映
   padBottomForInput();
-
-  // レイアウト確定を2フレーム待つ → 一番下へ
-  await nextFrame();
-  await nextFrame();
+  await nextFrame(); await nextFrame();
   scrollToBottom();
 
-  // タイピングインジケータが残っていたら追加で1秒待つ
   if (document.querySelector(".typing-indicator")) {
     wait = Math.max(wait, 1000);
   }
-
   await sleep(wait);
-
-  // 念のため再スクロール
   scrollToBottom();
 }
 
-function nextFrame() {
-  return new Promise(r => requestAnimationFrame(() => r()));
-}
-function scrollToBottom() {
-  messageContainer.scrollTop = messageContainer.scrollHeight;
-}
+function nextFrame() { return new Promise(r => requestAnimationFrame(() => r())); }
+function scrollToBottom() { messageContainer.scrollTop = messageContainer.scrollHeight; }
 
 /* =========================================
    入力ターン
@@ -350,7 +337,7 @@ async function handleUserTurn(row) {
   sendBtn.disabled = false;
   if (freeInputKeyHandler) { userInput.removeEventListener("keydown", freeInputKeyHandler); freeInputKeyHandler = null; }
 
-  // 入力UIを出す前に「見せ待ち」と下余白・スクロール調整
+  // 入力UIを出す前に「見せ待ち」
   await prepareToRevealInput();
 
   // ——— 選択肢 ———
@@ -358,7 +345,7 @@ async function handleUserTurn(row) {
     choicesArea.innerHTML = "";
     choicesArea.style.display = "block";
     padBottomForInput();
-    scrollToBottom();
+    await nextFrame(); scrollToBottom();
 
     const choices = [];
     if (choice1) choices.push({ text: choice1, nextId: nextId1, tweetText: Tweettext1 });
@@ -401,8 +388,7 @@ async function handleUserTurn(row) {
     sendBtn.disabled = false;
 
     padBottomForInput();
-    await nextFrame();
-    scrollToBottom();
+    await nextFrame(); scrollToBottom();
 
     userInput.blur();
     setTimeout(() => userInput.focus(), 80);
@@ -441,6 +427,7 @@ async function handleUserTurn(row) {
       sendBtn.onclick = null;
       if (freeInputKeyHandler) { userInput.removeEventListener("keydown", freeInputKeyHandler); freeInputKeyHandler = null; }
       inputArea.style.display = "none";
+      padBottomForInput();
       showTypingIndicator(false);
       await sleep(getTypingWaitTime());
       hideTypingIndicator();
@@ -491,6 +478,9 @@ function addMessageToChat(speakerId, speakerName, text, image="", imageURL="") {
 
   row.appendChild(wrap);
   messageContainer.appendChild(row);
+
+  // ダミー行が末尾にあることを保証（初回のみ追加）
+  ensureBottomSpacer();
   messageContainer.scrollTop = messageContainer.scrollHeight;
 }
 
@@ -542,12 +532,25 @@ function getDelayForMessage(msg){ const t=75, n=msg?.length||1, base=n*t, f=Math
 function getTypingWaitTime(){ const min=1200, max=2500; return Math.floor(Math.random()*(max-min+1))+min; }
 function getCurrentTimeString(){ const n=new Date(), h=String(n.getHours()).padStart(2,"0"), m=String(n.getMinutes()).padStart(2,"0"); return `${h}:${m}`; }
 
-/* 入力UIの高さぶん下余白を常時確保＋CSS変数セット */
+/* 入力UIの高さぶんの余白をCSS変数とダミー行に反映 */
 function padBottomForInput(){
   if(!inputArea||!messageContainer) return;
   const h = inputArea.getBoundingClientRect().height || 0;
-  messageContainer.style.paddingBottom = `${h + 8}px`;
-  document.documentElement.style.setProperty("--input-h", `${h + 8}px`);
+  const pad = h + 8;
+  messageContainer.style.paddingBottom = `${pad}px`;
+  document.documentElement.style.setProperty("--input-h", `${pad}px`);
+  ensureBottomSpacer(pad);
+}
+
+/* 末尾に高さ可変のスペーサーを常駐させる */
+function ensureBottomSpacer(heightPx){
+  let spacer = document.getElementById("bottomSpacer");
+  if (!spacer) {
+    spacer = document.createElement("div");
+    spacer.id = "bottomSpacer";
+    messageContainer.appendChild(spacer);
+  }
+  if (heightPx != null) spacer.style.height = `${heightPx}px`;
 }
 
 function blurActive(){
