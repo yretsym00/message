@@ -22,9 +22,9 @@ const sidebarToggleBtn = document.getElementById("sidebarToggle");
 let isConversationRunning = false;
 let freeInputKeyHandler = null;
 
-/* ===== 入力UI露出の待ち時間 ===== */
-const INPUT_REVEAL_MIN = 700;   // ms
-const INPUT_REVEAL_MAX = 1800;  // ms
+/* ===== 入力UI露出の待ち時間（拡張） ===== */
+const INPUT_REVEAL_MIN = 1100;   // ms
+const INPUT_REVEAL_MAX = 2600;   // ms
 
 /* =========================================
    100vh対策
@@ -51,41 +51,39 @@ window.addEventListener("load", async () => {
       const r = rows[i]; if (r.length < 28) continue;
       const id = parseInt(r[0], 10); if (!id) continue;
 
-      const record = {
+      conversations.push({
         id,
-        speakerName: (r[1]||"").trim(),
-        message    : (r[2]||"").trim(),
-        input      : (r[3]||"").trim(),
-        answer     : (r[4]||"").trim(),
-        TrueId     : (r[5]||"").trim(),
-        NGid       : (r[6]||"").trim(),
-        choice1    : (r[7]||"").trim(),
-        choice2    : (r[8]||"").trim(),
-        choice3    : (r[9]||"").trim(),
-        choice4    : (r[10]||"").trim(),
-        nextId1    : (r[11]||"").trim(),
-        nextId2    : (r[12]||"").trim(),
-        nextId3    : (r[13]||"").trim(),
-        nextId4    : (r[14]||"").trim(),
-        speakerId  : (r[15]||"").trim(),
-        waittime_seconds: (r[16]||"").trim(),
-        readstatus : (r[17]||"").trim(),
-        image      : (r[18]||"").replace(/\r/g,"").trim(),
-        imageURL   : (r[19]||"").replace(/\r/g,"").trim(),
-        choice1URL : (r[20]||"").trim(),
-        Tweettext1 : (r[21]||"").trim(),
-        choice2URL : (r[22]||"").trim(),
-        Tweettext2 : (r[23]||"").trim(),
-        choice3URL : (r[24]||"").trim(),
-        Tweettext3 : (r[25]||"").trim(),
-        choice4URL : (r[26]||"").trim(),
-        Tweettext4 : (r[27]||"").trim()
-      };
-      conversations.push(record);
+        speakerName:(r[1]||"").trim(),
+        message:(r[2]||"").trim(),
+        input:(r[3]||"").trim(),
+        answer:(r[4]||"").trim(),
+        TrueId:(r[5]||"").trim(),
+        NGid:(r[6]||"").trim(),
+        choice1:(r[7]||"").trim(),
+        choice2:(r[8]||"").trim(),
+        choice3:(r[9]||"").trim(),
+        choice4:(r[10]||"").trim(),
+        nextId1:(r[11]||"").trim(),
+        nextId2:(r[12]||"").trim(),
+        nextId3:(r[13]||"").trim(),
+        nextId4:(r[14]||"").trim(),
+        speakerId:(r[15]||"").trim(),
+        waittime_seconds:(r[16]||"").trim(),
+        readstatus:(r[17]||"").trim(),
+        image:(r[18]||"").replace(/\r/g,"").trim(),
+        imageURL:(r[19]||"").replace(/\r/g,"").trim(),
+        choice1URL:(r[20]||"").trim(),
+        Tweettext1:(r[21]||"").trim(),
+        choice2URL:(r[22]||"").trim(),
+        Tweettext2:(r[23]||"").trim(),
+        choice3URL:(r[24]||"").trim(),
+        Tweettext3:(r[25]||"").trim(),
+        choice4URL:(r[26]||"").trim(),
+        Tweettext4:(r[27]||"").trim()
+      });
     }
 
     conversations.sort((a,b) => a.id - b.id);
-
     const first = conversations.find(c => c.speakerId && c.speakerId !== "USER");
     if (first) addSpeakerToList(first.speakerId, first.speakerName, first.readstatus === "unread");
 
@@ -102,7 +100,7 @@ window.addEventListener("load", async () => {
 
   addBtn.addEventListener("click", () => { alert("左ボタンがクリックされました（例）"); });
 
-  userInput.blur();  // 初回に自動ズームさせない
+  userInput.blur();  // 初回自動ズーム抑止
   padBottomForInput();
 });
 
@@ -293,9 +291,10 @@ async function displayFromId(startId) {
 }
 
 /* =========================================
-   入力UI露出の準備（表示前に少し待つ）
+   入力UI露出の準備（表示前の待機とスクロール調整）
 ========================================= */
 async function prepareToRevealInput() {
+  // 直近バブルの高さに応じて待つ
   const bubbles = messageContainer.querySelectorAll(".message-bubble");
   const lastBubble = bubbles[bubbles.length - 1];
 
@@ -305,12 +304,30 @@ async function prepareToRevealInput() {
     wait = Math.round(Math.min(INPUT_REVEAL_MAX, Math.max(INPUT_REVEAL_MIN, h * 6)));
   }
 
-  messageContainer.scrollTop = messageContainer.scrollHeight;
+  // 入力UIの高さぶんの余白をまず反映
+  padBottomForInput();
 
+  // レイアウト確定を2フレーム待つ → 一番下へ
+  await nextFrame();
+  await nextFrame();
+  scrollToBottom();
+
+  // タイピングインジケータが残っていたら追加で1秒待つ
   if (document.querySelector(".typing-indicator")) {
     wait = Math.max(wait, 1000);
   }
+
   await sleep(wait);
+
+  // 念のため再スクロール
+  scrollToBottom();
+}
+
+function nextFrame() {
+  return new Promise(r => requestAnimationFrame(() => r()));
+}
+function scrollToBottom() {
+  messageContainer.scrollTop = messageContainer.scrollHeight;
 }
 
 /* =========================================
@@ -333,13 +350,15 @@ async function handleUserTurn(row) {
   sendBtn.disabled = false;
   if (freeInputKeyHandler) { userInput.removeEventListener("keydown", freeInputKeyHandler); freeInputKeyHandler = null; }
 
-  // 入力UIを出す前に、直前の会話が目に入るまで待つ
+  // 入力UIを出す前に「見せ待ち」と下余白・スクロール調整
   await prepareToRevealInput();
 
   // ——— 選択肢 ———
   if (choice1 || choice2 || choice3 || choice4) {
     choicesArea.innerHTML = "";
     choicesArea.style.display = "block";
+    padBottomForInput();
+    scrollToBottom();
 
     const choices = [];
     if (choice1) choices.push({ text: choice1, nextId: nextId1, tweetText: Tweettext1 });
@@ -380,8 +399,13 @@ async function handleUserTurn(row) {
   } else if (input === "自由入力") {
     inputArea.style.display = "block";
     sendBtn.disabled = false;
+
+    padBottomForInput();
+    await nextFrame();
+    scrollToBottom();
+
     userInput.blur();
-    setTimeout(() => userInput.focus(), 50);
+    setTimeout(() => userInput.focus(), 80);
 
     freeInputKeyHandler = (e) => {
       if (e.isComposing) return;
@@ -517,5 +541,17 @@ function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 function getDelayForMessage(msg){ const t=75, n=msg?.length||1, base=n*t, f=Math.random()*(1.6-1.0)+1.0; return Math.floor(base*f); }
 function getTypingWaitTime(){ const min=1200, max=2500; return Math.floor(Math.random()*(max-min+1))+min; }
 function getCurrentTimeString(){ const n=new Date(), h=String(n.getHours()).padStart(2,"0"), m=String(n.getMinutes()).padStart(2,"0"); return `${h}:${m}`; }
-function padBottomForInput(){ if(!inputArea||!messageContainer)return; const h=inputArea.getBoundingClientRect().height||0; messageContainer.style.paddingBottom=`${h+8}px`; }
-function blurActive(){ if (document.activeElement && typeof document.activeElement.blur === "function") document.activeElement.blur(); }
+
+/* 入力UIの高さぶん下余白を常時確保＋CSS変数セット */
+function padBottomForInput(){
+  if(!inputArea||!messageContainer) return;
+  const h = inputArea.getBoundingClientRect().height || 0;
+  messageContainer.style.paddingBottom = `${h + 8}px`;
+  document.documentElement.style.setProperty("--input-h", `${h + 8}px`);
+}
+
+function blurActive(){
+  if (document.activeElement && typeof document.activeElement.blur === "function") {
+    document.activeElement.blur();
+  }
+}
