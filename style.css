@@ -55,11 +55,12 @@ html, body {
 #messageContainer {
   flex: 1; overflow-y: auto; padding: 12px; background: #8AAECB;
   -webkit-overflow-scrolling: touch;
-  scroll-padding-bottom: var(--input-h, 96px);
+  /* 入力UI総高さぶんのスクロール余白 */
+  scroll-padding-bottom: var(--footer-h, 120px);
 }
 #bottomSpacer {
   width: 100%;
-  height: var(--input-h, 96px); /* JSで更新 */
+  height: var(--footer-h, 120px); /* JSで更新 */
   flex: 0 0 auto;
 }
 
