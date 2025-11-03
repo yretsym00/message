@@ -101,11 +101,13 @@ window.addEventListener("load", async () => {
   addBtn.addEventListener("click", () => { alert("左ボタンがクリックされました（例）"); });
 
   userInput.blur();  // 初回自動ズーム抑止
-  padBottomForInput();
+  updateFooterPadding();
 });
 
-const inputResizeObserver = new ResizeObserver(padBottomForInput);
-inputResizeObserver.observe(inputArea);
+const resizeObs1 = new ResizeObserver(updateFooterPadding);
+resizeObs1.observe(inputArea);
+const resizeObs2 = new ResizeObserver(updateFooterPadding);
+resizeObs2.observe(choicesArea);
 
 /* =========================================
    サイドバー
@@ -226,6 +228,7 @@ function restoreConversationHistory(speakerId) {
     rowDiv.appendChild(wrap);
     messageContainer.appendChild(rowDiv);
   }
+  ensureBottomSpacer();
   messageContainer.scrollTop = messageContainer.scrollHeight;
 }
 
@@ -303,7 +306,7 @@ async function prepareToRevealInput() {
     wait = Math.round(Math.min(INPUT_REVEAL_MAX, Math.max(INPUT_REVEAL_MIN, h * 6)));
   }
 
-  padBottomForInput();
+  updateFooterPadding();
   await nextFrame(); await nextFrame();
   scrollToBottom();
 
@@ -344,7 +347,7 @@ async function handleUserTurn(row) {
   if (choice1 || choice2 || choice3 || choice4) {
     choicesArea.innerHTML = "";
     choicesArea.style.display = "block";
-    padBottomForInput();
+    updateFooterPadding();
     await nextFrame(); scrollToBottom();
 
     const choices = [];
@@ -364,6 +367,7 @@ async function handleUserTurn(row) {
 
           addMessageToChat("USER", "あなた", ch.text);
           choicesArea.style.display = "none";
+          updateFooterPadding();
           blurActive();
 
           if (ch.tweetText) {
@@ -387,7 +391,7 @@ async function handleUserTurn(row) {
     inputArea.style.display = "block";
     sendBtn.disabled = false;
 
-    padBottomForInput();
+    updateFooterPadding();
     await nextFrame(); scrollToBottom();
 
     userInput.blur();
@@ -427,7 +431,7 @@ async function handleUserTurn(row) {
       sendBtn.onclick = null;
       if (freeInputKeyHandler) { userInput.removeEventListener("keydown", freeInputKeyHandler); freeInputKeyHandler = null; }
       inputArea.style.display = "none";
-      padBottomForInput();
+      updateFooterPadding();
       showTypingIndicator(false);
       await sleep(getTypingWaitTime());
       hideTypingIndicator();
@@ -479,7 +483,6 @@ function addMessageToChat(speakerId, speakerName, text, image="", imageURL="") {
   row.appendChild(wrap);
   messageContainer.appendChild(row);
 
-  // ダミー行が末尾にあることを保証（初回のみ追加）
   ensureBottomSpacer();
   messageContainer.scrollTop = messageContainer.scrollHeight;
 }
@@ -532,13 +535,14 @@ function getDelayForMessage(msg){ const t=75, n=msg?.length||1, base=n*t, f=Math
 function getTypingWaitTime(){ const min=1200, max=2500; return Math.floor(Math.random()*(max-min+1))+min; }
 function getCurrentTimeString(){ const n=new Date(), h=String(n.getHours()).padStart(2,"0"), m=String(n.getMinutes()).padStart(2,"0"); return `${h}:${m}`; }
 
-/* 入力UIの高さぶんの余白をCSS変数とダミー行に反映 */
-function padBottomForInput(){
-  if(!inputArea||!messageContainer) return;
-  const h = inputArea.getBoundingClientRect().height || 0;
-  const pad = h + 8;
+/* ===== 下余白（入力欄＋選択肢の合計）を反映 ===== */
+function updateFooterPadding(){
+  const inputH = inputArea.offsetParent ? inputArea.getBoundingClientRect().height : 0;
+  const choicesH = choicesArea.offsetParent && choicesArea.style.display !== "none"
+      ? choicesArea.getBoundingClientRect().height : 0;
+  const pad = Math.round(inputH + choicesH + 12); // 少し余白
   messageContainer.style.paddingBottom = `${pad}px`;
-  document.documentElement.style.setProperty("--input-h", `${pad}px`);
+  document.documentElement.style.setProperty("--footer-h", `${pad}px`);
   ensureBottomSpacer(pad);
 }
 
