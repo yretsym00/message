@@ -1,14 +1,12 @@
 /* =========================================
-   1) グローバル変数・定義
+   1) グローバル
 ========================================= */
 const SPREADSHEET_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQOpH43k0f6Cc0Qn1gzXsnJNDybSce7CTW1hOWBgvTJIfTPuaZsEpcbO1u9E7CIQSSGzAHa4ZST7fFw/pub?gid=1835455716&single=true&output=csv"; // 闇バイト
-// "https://docs.google.com/spreadsheets/d/e/2PACX-1vQOpH43k0f6Cc0Qn1gzXsnJNDybSce7CTW1hOWBgvTJIfTPuaZsEpcbO1u9E7CIQSSGzAHa4ZST7fFw/pub?output=csv"; // 山野井
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQOpH43k0f6Cc0Qn1gzXsnJNDybSce7CTW1hOWBgvTJIfTPuaZsEpcbO1u9E7CIQSSGzAHa4ZST7fFw/pub?gid=1835455716&single=true&output=csv";
 
 let conversations = [];
 let currentSpeakerId = null;
 let speakerConversations = {};
-let displayedSpeakerIds = [];
 let typingIndicatorDiv = null;
 let typingIndicatorInterval = null;
 
@@ -22,12 +20,10 @@ const choicesArea = document.getElementById("choicesArea");
 const sidebarToggleBtn = document.getElementById("sidebarToggle");
 
 let isConversationRunning = false;
-
-// 自由入力用のキーイベントハンドラ参照を保持して重複を防ぐ
 let freeInputKeyHandler = null;
 
 /* =========================================
-   1') 100vh対策のCSS変数更新
+   100vh対策
 ========================================= */
 function setVhVar() {
   const vh = window.innerHeight * 0.01;
@@ -38,191 +34,130 @@ window.addEventListener("orientationchange", setVhVar);
 setVhVar();
 
 /* =========================================
-   2) ページロード時: CSVを取得
+   起動
 ========================================= */
 window.addEventListener("load", async () => {
   messageContainer.textContent = "データ取得中...";
-
   try {
-    const response = await fetch(SPREADSHEET_URL);
-    const csvText = await response.text();
-    const rows = csvText.split("\n").map((r) => r.split(","));
+    const res = await fetch(SPREADSHEET_URL);
+    const csvText = await res.text();
+    const rows = csvText.split("\n").map(r => r.split(","));
 
     for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
-      if (row.length < 28) continue;
+      const r = rows[i]; if (r.length < 28) continue;
+      const id = parseInt(r[0], 10); if (!id) continue;
 
-      const id = parseInt(row[0], 10);
-      if (!id) continue;
-
-      const speakerName      = (row[1]  || "").trim();
-      const message          = (row[2]  || "").trim();
-      const input            = (row[3]  || "").trim();
-      const answer           = (row[4]  || "").trim();
-      const TrueId           = (row[5]  || "").trim();
-      const NGid             = (row[6]  || "").trim();
-      const choice1          = (row[7]  || "").trim();
-      const choice2          = (row[8]  || "").trim();
-      const choice3          = (row[9]  || "").trim();
-      const choice4          = (row[10] || "").trim();
-      const nextId1          = (row[11] || "").trim();
-      const nextId2          = (row[12] || "").trim();
-      const nextId3          = (row[13] || "").trim();
-      const nextId4          = (row[14] || "").trim();
-      const speakerId        = (row[15] || "").trim();
-      const waittime_seconds = (row[16] || "").trim();
-      const readstatus       = (row[17] || "").trim();
-
-      const imageRaw   = (row[18] || "");
-      const imageURLRaw = (row[19]  || "");
-      const image    = imageRaw.replace(/\r/g, "").trim();
-      const imageURL = imageURLRaw.replace(/\r/g, "").trim();
-
-      const choice1URL  = (row[20] || "").trim();
-      const Tweettext1  = (row[21] || "").trim();
-      const choice2URL  = (row[22] || "").trim();
-      const Tweettext2  = (row[23] || "").trim();
-      const choice3URL  = (row[24] || "").trim();
-      const Tweettext3  = (row[25] || "").trim();
-      const choice4URL  = (row[26] || "").trim();
-      const Tweettext4  = (row[27] || "").trim();
-
-      conversations.push({
+      const record = {
         id,
-        speakerName,
-        speakerId,
-        message,
-        input,
-        answer,
-        TrueId,
-        NGid,
-        choice1,
-        choice2,
-        choice3,
-        choice4,
-        nextId1,
-        nextId2,
-        nextId3,
-        nextId4,
-        waittime_seconds,
-        readstatus,
-        image,
-        imageURL,
-        choice1URL,
-        Tweettext1,
-        choice2URL,
-        Tweettext2,
-        choice3URL,
-        Tweettext3,
-        choice4URL,
-        Tweettext4
-      });
+        speakerName: (r[1]||"").trim(),
+        message    : (r[2]||"").trim(),
+        input      : (r[3]||"").trim(),
+        answer     : (r[4]||"").trim(),
+        TrueId     : (r[5]||"").trim(),
+        NGid       : (r[6]||"").trim(),
+        choice1    : (r[7]||"").trim(),
+        choice2    : (r[8]||"").trim(),
+        choice3    : (r[9]||"").trim(),
+        choice4    : (r[10]||"").trim(),
+        nextId1    : (r[11]||"").trim(),
+        nextId2    : (r[12]||"").trim(),
+        nextId3    : (r[13]||"").trim(),
+        nextId4    : (r[14]||"").trim(),
+        speakerId  : (r[15]||"").trim(),
+        waittime_seconds: (r[16]||"").trim(),
+        readstatus : (r[17]||"").trim(),
+        image      : (r[18]||"").replace(/\r/g,"").trim(),
+        imageURL   : (r[19]||"").replace(/\r/g,"").trim(),
+        choice1URL : (r[20]||"").trim(),
+        Tweettext1 : (r[21]||"").trim(),
+        choice2URL : (r[22]||"").trim(),
+        Tweettext2 : (r[23]||"").trim(),
+        choice3URL : (r[24]||"").trim(),
+        Tweettext3 : (r[25]||"").trim(),
+        choice4URL : (r[26]||"").trim(),
+        Tweettext4 : (r[27]||"").trim()
+      };
+      conversations.push(record);
     }
 
-    conversations.sort((a, b) => a.id - b.id);
+    conversations.sort((a,b) => a.id - b.id);
 
-    for (const c of conversations) {
-      if (c.speakerId && c.speakerId !== "USER") {
-        const isUnread = (c.readstatus === "unread");
-        addSpeakerToList(c.speakerId, c.speakerName, isUnread);
-        break;
-      }
-    }
+    const first = conversations.find(c => c.speakerId && c.speakerId !== "USER");
+    if (first) addSpeakerToList(first.speakerId, first.speakerName, first.readstatus === "unread");
 
     messageContainer.textContent = "";
-
-  } catch (err) {
-    console.error(err);
+  } catch(e) {
+    console.error(e);
     messageContainer.textContent = "データ取得失敗。URLや公開設定などを確認してください。";
   }
 
-  // サイドバー開閉
   sidebarToggleBtn.addEventListener("click", () => {
     talkList.classList.toggle("open");
-    const isOpen = talkList.classList.contains("open");
-    document.body.classList.toggle("drawer-open", isOpen);
+    document.body.classList.toggle("drawer-open", talkList.classList.contains("open"));
   });
 
-  addBtn.addEventListener("click", () => {
-    alert("左ボタンがクリックされました（例）");
-  });
+  addBtn.addEventListener("click", () => { alert("左ボタンがクリックされました（例）"); });
+
+  // iOSのズームを解除しやすくするため、初回に入力欄へフォーカスを付けない
+  userInput.blur();
 
   padBottomForInput();
 });
 
-/* 入力エリア高さ監視で下余白調整 */
 const inputResizeObserver = new ResizeObserver(padBottomForInput);
 inputResizeObserver.observe(inputArea);
 
 /* =========================================
-   2') 既存 .talk-item を探す
+   サイドバー
 ========================================= */
 function findTalkItemById(speakerId) {
   const items = document.querySelectorAll(".talk-item");
   for (const it of items) if (it.dataset.speakerId === speakerId) return it;
   return null;
 }
-
-/* =========================================
-   サイドバー未読インジケータ更新
-========================================= */
 function updateSidebarToggleUnreadIndicator() {
   const unreadIcons = talkList.querySelectorAll(".unread-icon");
+  const id = "sidebarUnreadIndicator";
   if (unreadIcons.length > 0) {
-    if (!document.getElementById("sidebarUnreadIndicator")) {
-      const indicator = document.createElement("div");
-      indicator.id = "sidebarUnreadIndicator";
-      indicator.className = "sidebar-unread";
-      sidebarToggleBtn.appendChild(indicator);
+    if (!document.getElementById(id)) {
+      const d = document.createElement("div");
+      d.id = id; d.className = "sidebar-unread";
+      sidebarToggleBtn.appendChild(d);
     }
   } else {
-    const indicator = document.getElementById("sidebarUnreadIndicator");
-    if (indicator) indicator.remove();
+    const d = document.getElementById(id);
+    if (d) d.remove();
   }
 }
-
-/* =========================================
-   3) サイドバーにスピーカー追加
-========================================= */
-function addSpeakerToList(speakerId, speakerName, unread = false) {
-  const existingItem = findTalkItemById(speakerId);
-  if (existingItem) {
-    if (unread && !existingItem.querySelector(".unread-icon")) {
-      const unreadIcon = document.createElement("div");
-      unreadIcon.className = "unread-icon";
-      existingItem.appendChild(unreadIcon);
+function addSpeakerToList(speakerId, speakerName, unread=false) {
+  const exist = findTalkItemById(speakerId);
+  if (exist) {
+    if (unread && !exist.querySelector(".unread-icon")) {
+      const dot = document.createElement("div");
+      dot.className = "unread-icon"; exist.appendChild(dot);
     }
-    updateSidebarToggleUnreadIndicator();
-    return;
+    updateSidebarToggleUnreadIndicator(); return;
   }
-
   const item = document.createElement("div");
-  item.className = "talk-item";
-  item.dataset.speakerId = speakerId;
+  item.className = "talk-item"; item.dataset.speakerId = speakerId;
 
   const nameDiv = document.createElement("div");
-  nameDiv.className = "talk-item-name";
-  nameDiv.textContent = speakerName;
+  nameDiv.className = "talk-item-name"; nameDiv.textContent = speakerName;
   item.appendChild(nameDiv);
 
   if (unread) {
-    const unreadIcon = document.createElement("div");
-    unreadIcon.className = "unread-icon";
-    item.appendChild(unreadIcon);
+    const dot = document.createElement("div");
+    dot.className = "unread-icon"; item.appendChild(dot);
   }
 
   item.addEventListener("click", () => {
-    const icon = item.querySelector(".unread-icon");
-    if (icon) {
-      icon.remove();
-      updateSidebarToggleUnreadIndicator();
-    }
+    const dot = item.querySelector(".unread-icon");
+    if (dot) { dot.remove(); updateSidebarToggleUnreadIndicator(); }
     startConversation(speakerId);
-
     if (talkList.classList.contains("open")) {
-      talkList.classList.remove("open");
-      document.body.classList.remove("drawer-open");
+      talkList.classList.remove("open"); document.body.classList.remove("drawer-open");
     }
+    blurActive(); // ← フォーカスでズームしないよう外す
   });
 
   talkList.appendChild(item);
@@ -230,15 +165,12 @@ function addSpeakerToList(speakerId, speakerName, unread = false) {
 }
 
 /* =========================================
-   4) 会話開始
+   会話本体
 ========================================= */
 async function startConversation(speakerId) {
   if (currentSpeakerId === speakerId && isConversationRunning) return;
-
   isConversationRunning = true;
   currentSpeakerId = speakerId;
-
-  if (isSPid(speakerId)) disableAllSpeakers();
 
   messageContainer.innerHTML = "";
   inputArea.style.display = "none";
@@ -256,27 +188,17 @@ async function startConversation(speakerId) {
 
   restoreConversationHistory(speakerId);
 
-  if (!speakerConversations[speakerId].currentId) {
-    isConversationRunning = false;
-    return;
-  }
+  if (!speakerConversations[speakerId].currentId) { isConversationRunning = false; return; }
 
   await displayFromId(speakerConversations[speakerId].currentId);
-
   isConversationRunning = false;
 }
 
-/* =========================================
-   5) 過去ログ再描画
-========================================= */
 function restoreConversationHistory(speakerId) {
-  const info = speakerConversations[speakerId];
-  if (!info) return;
-
+  const info = speakerConversations[speakerId]; if (!info) return;
   for (const msg of info.messages) {
     const rowDiv = document.createElement("div");
-    rowDiv.className =
-      "message-row " + (msg.speakerName === "あなた" ? "message-right" : "message-left");
+    rowDiv.className = "message-row " + (msg.speakerName === "あなた" ? "message-right" : "message-left");
 
     if (msg.speakerName !== "あなた") {
       const iconDiv = document.createElement("div");
@@ -284,39 +206,29 @@ function restoreConversationHistory(speakerId) {
       rowDiv.appendChild(iconDiv);
     }
 
-    const wrapperDiv = document.createElement("div");
-    wrapperDiv.className = "bubble-wrapper";
-
-    const bubbleDiv = document.createElement("div");
-    bubbleDiv.className = "message-bubble";
-
+    const wrap = document.createElement("div"); wrap.className = "bubble-wrapper";
+    const bubble = document.createElement("div"); bubble.className = "message-bubble";
     if (msg.image === "ON") {
-      bubbleDiv.innerHTML = `<img src="${msg.imageURL}" style="max-width: 100%; height:auto;">`;
+      bubble.innerHTML = `<img src="${msg.imageURL}" style="max-width: 100%; height:auto;">`;
     } else {
-      bubbleDiv.innerHTML = msg.text.replace(/\n/g, "<br>");
+      bubble.innerHTML = msg.text.replace(/\n/g, "<br>");
     }
-    wrapperDiv.appendChild(bubbleDiv);
+    wrap.appendChild(bubble);
 
-    const metaDiv = document.createElement("div");
-    metaDiv.classList.add("metadata");
+    const meta = document.createElement("div"); meta.classList.add("metadata");
     if (msg.speakerName === "あなた") {
-      metaDiv.classList.add("metadata-user");
-      metaDiv.innerHTML = `<div>既読</div><div>${msg.timestamp || "--:--"}</div>`;
+      meta.classList.add("metadata-user"); meta.innerHTML = `<div>既読</div><div>${msg.timestamp || "--:--"}</div>`;
     } else {
-      metaDiv.classList.add("metadata-speaker");
-      metaDiv.innerHTML = `<div>${msg.timestamp || "--:--"}</div>`;
+      meta.classList.add("metadata-speaker"); meta.innerHTML = `<div>${msg.timestamp || "--:--"}</div>`;
     }
-    wrapperDiv.appendChild(metaDiv);
+    wrap.appendChild(meta);
 
-    rowDiv.appendChild(wrapperDiv);
+    rowDiv.appendChild(wrap);
     messageContainer.appendChild(rowDiv);
   }
   messageContainer.scrollTop = messageContainer.scrollHeight;
 }
 
-/* =========================================
-   6) displayFromId
-========================================= */
 async function displayFromId(startId) {
   const idx = conversations.findIndex(c => c.id === startId);
   if (idx === -1) return;
@@ -341,13 +253,7 @@ async function displayFromId(startId) {
       await sleep(getTypingWaitTime());
       hideTypingIndicator();
 
-      addMessageToChat(
-        rowSpeakerId,
-        rowSpeakerName,
-        currentRow.message,
-        currentRow.image,
-        currentRow.imageURL
-      );
+      addMessageToChat(rowSpeakerId, rowSpeakerName, currentRow.message, currentRow.image, currentRow.imageURL);
 
       speakerConversations[initialSpeakerId].currentId = currentRow.id;
       if (!nextRow) break;
@@ -364,32 +270,20 @@ async function displayFromId(startId) {
         continue;
       }
 
-      if (currentRow.input ||
-          currentRow.choice1 || currentRow.choice2 ||
-          currentRow.choice3 || currentRow.choice4) {
+      if (currentRow.input || currentRow.choice1 || currentRow.choice2 || currentRow.choice3 || currentRow.choice4) {
         await handleUserTurn(currentRow);
       }
       break;
 
     } else {
-      if (isSPid(initialSpeakerId) && isSPid(rowSpeakerId) && initialSpeakerId !== rowSpeakerId) {
-        enableAllSpeakers();
-      }
-
       if (rowSpeakerId && rowSpeakerId !== "USER") {
         if (!speakerConversations[rowSpeakerId]) {
-          speakerConversations[rowSpeakerId] = {
-            speakerName: rowSpeakerName || rowSpeakerId,
-            messages: [],
-            currentId: currentRow.id
-          };
+          speakerConversations[rowSpeakerId] = { speakerName: rowSpeakerName || rowSpeakerId, messages: [], currentId: currentRow.id };
         } else {
           speakerConversations[rowSpeakerId].currentId = currentRow.id;
         }
-        const isUnread = (currentRow.readstatus === "unread");
-        addSpeakerToList(rowSpeakerId, rowSpeakerName, isUnread);
+        addSpeakerToList(rowSpeakerId, rowSpeakerName, currentRow.readstatus === "unread");
       }
-
       speakerConversations[initialSpeakerId].currentId = currentRow.id;
       break;
     }
@@ -397,7 +291,7 @@ async function displayFromId(startId) {
 }
 
 /* =========================================
-   7) ユーザー操作 (選択肢/自由入力)
+   入力ターン
 ========================================= */
 async function handleUserTurn(row) {
   const {
@@ -411,13 +305,10 @@ async function handleUserTurn(row) {
   choicesArea.style.display = "none";
   userInput.value = "";
 
-  // 既存の自由入力ハンドラを解除
+  // リスナー初期化
   sendBtn.onclick = null;
   sendBtn.disabled = false;
-  if (freeInputKeyHandler) {
-    userInput.removeEventListener("keydown", freeInputKeyHandler);
-    freeInputKeyHandler = null;
-  }
+  if (freeInputKeyHandler) { userInput.removeEventListener("keydown", freeInputKeyHandler); freeInputKeyHandler = null; }
 
   // ——— 選択肢 ———
   if (choice1 || choice2 || choice3 || choice4) {
@@ -441,11 +332,11 @@ async function handleUserTurn(row) {
 
           addMessageToChat("USER", "あなた", ch.text);
           choicesArea.style.display = "none";
+          blurActive(); // ← ズーム解除
 
           if (ch.tweetText) {
-            const tweetBase = "https://twitter.com/intent/tweet";
-            const fullURL = tweetBase + "?text=" + encodeURIComponent(ch.tweetText);
-            window.open(fullURL, "_blank", "noopener");
+            const u = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(ch.tweetText);
+            window.open(u, "_blank", "noopener");
           }
 
           if (ch.nextId) {
@@ -459,11 +350,12 @@ async function handleUserTurn(row) {
       });
     });
 
-  // ——— 自由入力（自動進行なし、空送信不可） ———
+  // ——— 自由入力 ———
   } else if (input === "自由入力") {
     inputArea.style.display = "block";
     sendBtn.disabled = false;
-    userInput.focus();
+    userInput.blur(); // 直後の自動ズーム防止
+    setTimeout(() => userInput.focus(), 50); // 安定してからフォーカス
 
     // Enter確定（IME変換中は無効）
     freeInputKeyHandler = (e) => {
@@ -475,7 +367,6 @@ async function handleUserTurn(row) {
     };
     userInput.addEventListener("keydown", freeInputKeyHandler);
 
-    // 送信ボタン
     sendBtn.onclick = async () => {
       if (sendBtn.disabled) return;
 
@@ -486,42 +377,24 @@ async function handleUserTurn(row) {
 
       addMessageToChat("USER", "あなた", userText);
       userInput.value = "";
+      blurActive(); // ← 送信後にフォーカスを外してズーム解除
       await sleep(300);
 
       if (answer) {
-        const validAnswers = answer.split("|").map(s => s.trim());
-        if (validAnswers.includes(userText)) {
-          await proceed(TrueId);
-          return;
-        } else if (NGid) {
-          await proceed(NGid);
-          return;
-        } else {
-          // 再入力待ち
-          sendBtn.disabled = false;
-          userInput.focus();
-          return;
-        }
+        const ok = answer.split("|").map(s => s.trim());
+        if (ok.includes(userText)) { await proceed(TrueId); return; }
+        if (NGid) { await proceed(NGid); return; }
+        sendBtn.disabled = false; userInput.focus(); return;
       } else {
-        if (TrueId) {
-          await proceed(TrueId);
-          return;
-        } else {
-          // 遷移先なし → その場で再入力待ち
-          sendBtn.disabled = false;
-          userInput.focus();
-          return;
-        }
+        if (TrueId) { await proceed(TrueId); return; }
+        sendBtn.disabled = false; userInput.focus(); return;
       }
     };
 
     async function proceed(nextId) {
-      // この自由入力用リスナーを解除してから遷移
+      // リスナー解除
       sendBtn.onclick = null;
-      if (freeInputKeyHandler) {
-        userInput.removeEventListener("keydown", freeInputKeyHandler);
-        freeInputKeyHandler = null;
-      }
+      if (freeInputKeyHandler) { userInput.removeEventListener("keydown", freeInputKeyHandler); freeInputKeyHandler = null; }
       inputArea.style.display = "none";
       showTypingIndicator(false);
       await sleep(getTypingWaitTime());
@@ -535,150 +408,93 @@ async function handleUserTurn(row) {
 }
 
 /* =========================================
-   8) メッセージ表示 & 履歴追加
+   表示ヘルパ
 ========================================= */
-function addMessageToChat(speakerId, speakerName, text, image = "", imageURL = "") {
+function addMessageToChat(speakerId, speakerName, text, image="", imageURL="") {
   if (!speakerConversations[currentSpeakerId]) {
     speakerConversations[currentSpeakerId] = { speakerName: speakerId, messages: [], currentId: null };
   }
 
-  const nowString = getCurrentTimeString();
+  const now = getCurrentTimeString();
 
   speakerConversations[currentSpeakerId].messages.push({
-    speakerName, text, image, imageURL, timestamp: nowString
+    speakerName, text, image, imageURL, timestamp: now
   });
 
-  const rowDiv = document.createElement("div");
-  rowDiv.className =
-    "message-row " + (speakerName === "あなた" ? "message-right" : "message-left");
+  const row = document.createElement("div");
+  row.className = "message-row " + (speakerName === "あなた" ? "message-right" : "message-left");
 
   if (speakerName !== "あなた") {
     const iconDiv = document.createElement("div");
     iconDiv.className = getSpeakerIconClassName(speakerId);
-    rowDiv.appendChild(iconDiv);
+    row.appendChild(iconDiv);
   }
 
-  const wrapperDiv = document.createElement("div");
-  wrapperDiv.className = "bubble-wrapper";
+  const wrap = document.createElement("div"); wrap.className = "bubble-wrapper";
+  const bubble = document.createElement("div"); bubble.className = "message-bubble";
+  bubble.innerHTML = image === "ON" ? `<img src="${imageURL}" style="max-width: 100%; height: auto;">`
+                                    : text.replace(/\n/g, "<br>");
+  wrap.appendChild(bubble);
 
-  const bubbleDiv = document.createElement("div");
-  bubbleDiv.className = "message-bubble";
-
-  if (image === "ON") {
-    bubbleDiv.innerHTML = `<img src="${imageURL}" style="max-width: 100%; height: auto;">`;
-  } else {
-    bubbleDiv.innerHTML = text.replace(/\n/g, "<br>");
-  }
-  wrapperDiv.appendChild(bubbleDiv);
-
-  const metaDiv = document.createElement("div");
-  metaDiv.classList.add("metadata");
+  const meta = document.createElement("div"); meta.classList.add("metadata");
   if (speakerName === "あなた") {
-    metaDiv.classList.add("metadata-user");
-    metaDiv.innerHTML = `<div>既読</div><div>${nowString}</div>`;
+    meta.classList.add("metadata-user"); meta.innerHTML = `<div>既読</div><div>${now}</div>`;
   } else {
-    metaDiv.classList.add("metadata-speaker");
-    metaDiv.innerHTML = `<div>${nowString}</div>`;
+    meta.classList.add("metadata-speaker"); meta.innerHTML = `<div>${now}</div>`;
   }
-  wrapperDiv.appendChild(metaDiv);
+  wrap.appendChild(meta);
 
-  rowDiv.appendChild(wrapperDiv);
-  messageContainer.appendChild(rowDiv);
+  row.appendChild(wrap);
+  messageContainer.appendChild(row);
   messageContainer.scrollTop = messageContainer.scrollHeight;
 }
 
 /* =========================================
-   9) タイピング演出
+   タイピング
 ========================================= */
-function showTypingIndicator(isUserSide = false) {
+function showTypingIndicator(isUserSide=false) {
   hideTypingIndicator();
-
   typingIndicatorDiv = document.createElement("div");
-  typingIndicatorDiv.className = isUserSide
-    ? "message-row message-right typing-indicator"
-    : "message-row message-left typing-indicator";
-
+  typingIndicatorDiv.className = isUserSide ? "message-row message-right typing-indicator"
+                                            : "message-row message-left typing-indicator";
   if (!isUserSide) {
     const iconDiv = document.createElement("div");
     iconDiv.className = getSpeakerIconClassName(currentSpeakerId);
     typingIndicatorDiv.appendChild(iconDiv);
   }
-
   const bubble = document.createElement("div");
-  bubble.className = "message-bubble";
-  bubble.innerHTML = ".";
-
+  bubble.className = "message-bubble"; bubble.innerHTML = ".";
   typingIndicatorDiv.appendChild(bubble);
   messageContainer.appendChild(typingIndicatorDiv);
   messageContainer.scrollTop = messageContainer.scrollHeight;
 
-  let states = [".", "..", "..."];
-  let cycleCount = 0;
-  let stateIndex = 0;
-
+  let states = [".","..","..."]; let cycle = 0; let i = 0;
   typingIndicatorInterval = setInterval(() => {
-    stateIndex++;
-    if (stateIndex >= states.length) { stateIndex = 0; cycleCount++; }
-    bubble.innerHTML = states[stateIndex];
-    if (cycleCount >= 2 && stateIndex === states.length - 1) {
-      clearInterval(typingIndicatorInterval);
-      typingIndicatorInterval = null;
-    }
+    i = (i+1) % states.length; bubble.innerHTML = states[i];
+    if (i === states.length-1) { cycle++; if (cycle >= 2) { clearInterval(typingIndicatorInterval); typingIndicatorInterval = null; } }
     messageContainer.scrollTop = messageContainer.scrollHeight;
   }, 500);
 }
-
 function hideTypingIndicator() {
   if (typingIndicatorInterval) { clearInterval(typingIndicatorInterval); typingIndicatorInterval = null; }
   if (typingIndicatorDiv && typingIndicatorDiv.parentNode) {
-    typingIndicatorDiv.parentNode.removeChild(typingIndicatorDiv);
-    typingIndicatorDiv = null;
+    typingIndicatorDiv.parentNode.removeChild(typingIndicatorDiv); typingIndicatorDiv = null;
   }
 }
 
 /* =========================================
-   10) アイコン切り替え関数
+   小物
 ========================================= */
 function getSpeakerIconClassName(spId) {
   if (!spId || spId === "USER") return "";
-  const idUpper = spId.toUpperCase();
-  if (idUpper === "SP001") return "icon sp001-icon";
-  else if (idUpper === "SP002") return "icon sp002-icon";
-  else return "icon speaker-icon";
+  const id = spId.toUpperCase();
+  if (id === "SP001") return "icon sp001-icon";
+  if (id === "SP002") return "icon sp002-icon";
+  return "icon speaker-icon";
 }
-
-/* =========================================
-   補助関数
-========================================= */
-function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-
-function getDelayForMessage(msg) {
-  const perCharTime = 75;
-  const length = msg?.length || 1;
-  const base = length * perCharTime;
-  const factor = Math.random() * (1.6 - 1.0) + 1.0;
-  return Math.floor(base * factor);
-}
-
-function getTypingWaitTime() {
-  const min = 1200, max = 2500;
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function getCurrentTimeString() {
-  const now = new Date();
-  const hh = String(now.getHours()).padStart(2,"0");
-  const mm = String(now.getMinutes()).padStart(2,"0");
-  return `${hh}:${mm}`;
-}
-
-function disableAllSpeakers() { talkList.style.pointerEvents = "none"; talkList.style.opacity = "0.6"; }
-function enableAllSpeakers() { talkList.style.pointerEvents = "auto"; talkList.style.opacity = ""; }
-function isSPid(spId) { return !!spId && spId.toUpperCase().startsWith("SP"); }
-
-/* メッセージ領域の下余白を入力欄の高さに合わせる */
-function padBottomForInput() {
-  if (!inputArea || !messageContainer) return;
-  const h = inputArea.getBoundingClientRect().height || 0;
-  messageContainer.style.paddingBottom = `${h + 8}px`;
-}
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function getDelayForMessage(msg){ const t=75, n=msg?.length||1, base=n*t, f=Math.random()*(1.6-1.0)+1.0; return Math.floor(base*f); }
+function getTypingWaitTime(){ const min=1200, max=2500; return Math.floor(Math.random()*(max-min+1))+min; }
+function getCurrentTimeString(){ const n=new Date(), h=String(n.getHours()).padStart(2,"0"), m=String(n.getMinutes()).padStart(2,"0"); return `${h}:${m}`; }
+function padBottomForInput(){ if(!inputArea||!messageContainer)return; const h=inputArea.getBoundingClientRect().height||0; messageContainer.style.paddingBottom=`${h+8}px`; }
+function blurActive(){ if (document.activeElement && typeof document.activeElement.blur === "function") document.activeElement.blur(); }
